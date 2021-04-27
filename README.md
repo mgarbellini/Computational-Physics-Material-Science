@@ -3,6 +3,6 @@ Simulations for the lectures "Computational physics: material science" by Prof. 
 
 The following are the proposed simulations/tutorials:
 
-\item Solar system and planetary evolution
-\item Next item
-\item Next item
+- Solar system and planetary evolution
+- Next item
+- Next item
