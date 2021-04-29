@@ -23,9 +23,10 @@ Please see the report for an in depth formulation.
 
 import numpy as np
 import sys
+import itertools
 
 
-#GRAVITATIONAL_CONST = 128 """gravitational constant"""
+GRAVITATIONAL_CONST = 1
 #UNITS_OF_MASS = 10E29 """units of mass in kg"""
 
 def load_planets():
@@ -54,18 +55,11 @@ class Object:
 
         self.name = name
         self.mass = mass
-        self.init_position = init_position
-        self.init_velocity = init_velocity
+        self.init_position = np.array(init_position, dtype = np.float)
+        self.init_velocity = np.array(init_velocity, dtype = np.float)
         self.pos = [self.init_position,]
         self.vel = [self.init_velocity,]
         self.net_force = 0
-
-    @classmethod
-    def load_from_file(cls, filename):
-        instances = []
-
-
-
 
 class System:
 
@@ -86,15 +80,15 @@ class System:
     def compute_net_forces(self, t_id):
 
         f_matrix = np.zeros((3,self.n_planets, self.n_planets), dtype = np.float)
+        iterable = [0,1,2,3,4,5,6,7,8]
         for dir in range(3):
-            for p1, p2 in itertool.combinations_with_replacement(np.arange((0,self.n_planets), 1, dtype = int64),2):
+            for p1, p2 in itertools.combinations_with_replacement(iterable,2):
                 if(p1!=p2):
-                    f_matrix[dir,p1,p2] = G*self.planets[p1].mass*self.planets[p2].mass/(self.planets[p1].pos[t_id][dir] - self.planets[p2].pos[t_id][dir])
+                    f_matrix[dir,p1,p2] = GRAVITATIONAL_CONST*self.planets[p1].mass*self.planets[p2].mass/(self.planets[p1].pos[t_id][dir] - self.planets[p2].pos[t_id][dir])
                     f_matrix[dir,p1,p2] = f_matrix[dir,p2,p1]
                 else:
-                    f_matrix[dir,p1,p2] = G*self.sun.mass*self.planets[i].mass/self.planets[i].pos[t_id][dir]
-        return sum(f_matrix, axis = 1)
-
+                    f_matrix[dir,p1,p2] = GRAVITATIONAL_CONST*self.sun.mass*self.planets[p1].mass/self.planets[p1].pos[t_id][dir]
+        return f_matrix
 
     def evolve_euler(self, dt):
 
@@ -120,3 +114,5 @@ if __name__ == '__main__':
 
     for planet in SolarSystem.planets:
         print(planet.name)
+
+    print(SolarSystem.compute_net_forces(0))
