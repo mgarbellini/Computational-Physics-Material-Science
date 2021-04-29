@@ -14,13 +14,38 @@ Please see the report for an in depth formulation.
 
 """
 
+"""
+!% position and velocity data of all 9 planets in the solar system with Sun at origin
+!% position in units of AU ( 1AU = 1.49597870691E+11 meter )
+!% velocity in units of AU/day ( 1day = 86400 second )
+"""
+
 
 import numpy as np
-import itertool
+import sys
 
 
-G = 128 """gravitational constant"""
-M = 25 """mass of sun"""
+#GRAVITATIONAL_CONST = 128 """gravitational constant"""
+#UNITS_OF_MASS = 10E29 """units of mass in kg"""
+
+def load_planets():
+
+    with open("planets.dat") as file_in:
+        planet_name = ['Sun',]
+        planet_pos = [[0,0,0],]
+        planet_vel = [[0,0,0],]
+        for line in file_in:
+            sl = line.split()
+            planet_name.append(sl[6].replace("!%", ""))
+            planet_pos.append([float(sl[0]), float(sl[1]), float(sl[2])])
+            planet_vel.append([float(sl[3]), float(sl[4]), float(sl[5])])
+
+    with open("mass.dat") as file_in:
+        planet_mass = []
+        for line in file_in:
+            planet_mass.append(float(line.split()[0]))
+
+    return planet_name, planet_mass, planet_pos, planet_vel
 
 
 class Object:
@@ -38,7 +63,7 @@ class Object:
     @classmethod
     def load_from_file(cls, filename):
         instances = []
-        
+
 
 
 
@@ -55,14 +80,14 @@ class System:
 
     def add_planet(self, planet):
 
-        self.planet.append(planet)
+        self.planets.append(planet)
         self.n_planets += 1
 
     def compute_net_forces(self, t_id):
 
         f_matrix = np.zeros((3,self.n_planets, self.n_planets), dtype = np.float)
         for dir in range(3):
-            for p1, p2 in itertool.combinations_with_replacement(np.arange(0,self.n_planets), 1, dtype = int64),2):
+            for p1, p2 in itertool.combinations_with_replacement(np.arange((0,self.n_planets), 1, dtype = int64),2):
                 if(p1!=p2):
                     f_matrix[dir,p1,p2] = G*self.planets[p1].mass*self.planets[p2].mass/(self.planets[p1].pos[t_id][dir] - self.planets[p2].pos[t_id][dir])
                     f_matrix[dir,p1,p2] = f_matrix[dir,p2,p1]
@@ -84,3 +109,14 @@ class System:
 
 
 if __name__ == '__main__':
+
+    planets_name, planets_mass, planets_pos, planets_vel = load_planets()
+
+    Sun = Object(planets_name[0], planets_mass[0], planets_pos[0], planets_vel[0])
+    SolarSystem = System(Sun)
+
+    for i in range(1, len(planets_name)):
+        SolarSystem.add_planet(Object(planets_name[i], planets_mass[i], planets_pos[i], planets_vel[i]))
+
+    for planet in SolarSystem.planets:
+        print(planet.name)
