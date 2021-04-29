@@ -1,8 +1,7 @@
-mass data of all 9 planets in the solar system the Sun
-mass in units of 10**29 kg
-
+!* mass data of all 9 planets in the solar system the Sun
+!* mass in units of 10**29 kg
 19.861     !** Sun
-0.3302e-5   !** Mercury
+0.3302e-5  !** Mercury
 4.8685e-5  !** Venus
 5.9736e-5  !** Earth
 6.4185e-6  !** Mars
