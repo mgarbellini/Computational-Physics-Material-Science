@@ -35,6 +35,12 @@ class Object:
         self.vel = [self.init_velocity,]
         self.net_force = 0
 
+    @classmethod
+    def load_from_file(cls, filename):
+        instances = []
+        
+
+
 
 class System:
 
@@ -52,26 +58,29 @@ class System:
         self.planet.append(planet)
         self.n_planets += 1
 
-    def compute_forces(self, t_id):
+    def compute_net_forces(self, t_id):
 
-        f_matrix = np.zeros((self.n_planets, self.n_planets, 3), dtype = np.float)
+        f_matrix = np.zeros((3,self.n_planets, self.n_planets), dtype = np.float)
         for dir in range(3):
             for p1, p2 in itertool.combinations_with_replacement(np.arange(0,self.n_planets), 1, dtype = int64),2):
                 if(p1!=p2):
-                    f_matrix[p1,p2,dir] = G*self.planets[p1].mass*self.planets[p2].mass/(self.planets[p1].pos[t_id][dir] - self.planets[p2].pos[t_id][dir])
-                    f_matrix[p1,p2,dir] = f_matrix[p2,p1,dir]
+                    f_matrix[dir,p1,p2] = G*self.planets[p1].mass*self.planets[p2].mass/(self.planets[p1].pos[t_id][dir] - self.planets[p2].pos[t_id][dir])
+                    f_matrix[dir,p1,p2] = f_matrix[dir,p2,p1]
                 else:
-                    f_matrix[p1,p2,dir] = G*self.sun.mass*self.planets[i].mass/self.planets[i].pos[t_id][dir]
-        return f_matrix
+                    f_matrix[dir,p1,p2] = G*self.sun.mass*self.planets[i].mass/self.planets[i].pos[t_id][dir]
+        return sum(f_matrix, axis = 1)
 
 
     def evolve_euler(self, dt):
 
-        forces_matrix = self.compute_forces(self.t_id)
-        for planet in self.planets:
-            position = planet.pos[t_id] + dt*planet.vel[t_id] + 0.5*planet.mass*dt**2
-            velocity =
-            planet.pos.append(planet.pos[t_id])
-            planet.vel.append()
+        net_forces_matrix = self.compute_net_forces(self.t_id)
+        for planet, planet_id in enumerate(self.planets):
+            position = planet.pos[t_id] + dt*planet.vel[t_id] + 0.5/planet.mass*dt*dt*net_forces_matrix[:,planet_id]
+            velocity = planet.vel[t_id] + dt/planet.mass*net_forces_matrix[:,planet_id]
+            planet.pos.append(position)
+            planet.vel.append(velocity)
 
         self.t_id += 1
+
+
+if __name__ == '__main__':
