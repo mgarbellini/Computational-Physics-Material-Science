@@ -31,7 +31,12 @@ GRAVITATIONAL_CONST = 6.67408E-11
 UNITS_OF_MASS = 10E29 #"""units of mass in kg"""
 ASTRO_POS = 1.49597870691E+11
 ASTRO_DAY = 86400
-TIMESTEP = 43200
+TIMESTEP = 1000
+
+planet1_x = []
+planet1_y = []
+planet2_x = []
+planet2_y = []
 
 def load_planets():
 
@@ -89,7 +94,6 @@ class System:
         self.set_p_mass_matrix()
 
 
-
     def net_force(self, pos):
 
         distance = np.abs(pos - pos.transpose((0, 2, 1)))
@@ -99,27 +103,62 @@ class System:
         net_force_matrix = GRAVITATIONAL_CONST*np.multiply(distance_square_matrix, mass_stack)
         return np.sum(net_force_matrix, axis=1)
 
+    def update_current(self, next_pos, next_vel):
+
+        self.p_pos_previous = self.p_pos_current
+        self.p_vel_previous = self.p_vel_current
+
+        self.p_pos_current = np.stack((next_pos, next_pos, next_pos), axis=0)
+        dim = len(next_pos[0,:])
+        self.p_pos_current = np.stack(( np.resize(next_pos, (dim, dim)),
+                                        np.resize(next_pos, (dim, dim)),
+                                        np.resize(next_pos, (dim, dim))),
+                                        axis=0)
+        self.p_vel_current = next_vel
+
+        self.p_pos_next = None
+        self.p_vel_next = None
+
+    def evolve_euler(self,iterations):
+        iter =0
+
+        while iter<iterations:
+
+            next_pos = self.p_pos_current[:,:,0] + TIMESTEP*self.p_vel_current + 0.5*np.multiply(np.reciprocal(self.p_mass[0:3,:]),self.net_force(self.p_pos_current))*TIMESTEP**2
+            next_vel = self.p_vel_current + np.multiply(np.reciprocal(self.p_mass[0:3,:]),self.net_force(self.p_pos_current))*TIMESTEP
+            self.update_current(next_pos, next_vel)
+            iter+=1
+
+            planet1_x.append(next_pos[0,6])
+            planet1_y.append(next_pos[1,6])
+            planet2_x.append(next_pos[0,7])
+            planet2_y.append(next_pos[1,7])
+
+
+
+
     #def k_energy(self, vel):
 
     #def u_energy(self, pos):
 
 
-    def update_current(self):
 
-        self.p_pos_previous = self.p_pos_current
-        self.p_vel_previous = self.p_vel_current
-
-        self.p_pos_current = self.p_pos_next
-        self.p_vel_current = self.p_vel_next
-
-        self.p_pos_next = None
-        self.p_vel_next = None
 
 if __name__ == '__main__':
 
     planets_name, planets_mass, planets_pos, planets_vel = load_planets()
 
-    SolarSystem = System(planets_name, planets_mass*UNITS_OF_MASS)
-    SolarSystem.set_initial_condition(planets_pos*ASTRO_POS, planets_vel)
-    net_force = SolarSystem.net_force(SolarSystem.p_pos_current)
-    print(net_force)
+    SolarSystem = System(planets_name, planets_mass)
+    SolarSystem.set_initial_condition(planets_pos, planets_vel)
+
+    SolarSystem.evolve_euler(10000)
+
+    with plt.style.context(['science', 'dark_background']):
+        fig, ax = plt.subplots()
+
+        ax.plot(planet1_x, planet1_y, label="planet1")
+        ax.plot(planet2_x, planet2_y, label="planet2")
+
+        ax.legend(title='Planets')
+        ax.autoscale(tight=True)
+        fig.savefig('./fig1.pdf')
