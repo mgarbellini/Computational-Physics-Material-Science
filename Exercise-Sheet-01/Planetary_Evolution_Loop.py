@@ -1,6 +1,8 @@
+#!/usr/bin/env python3
+
 """
-M. Garbellini
-matteo.garbellini@studenti.unimi.it
+@author:    M. Garbellini
+@email:     matteo.garbellini@studenti.unimi.it
 
 Albert-Ludwigs-Universität Freiburg
 Computational Physics: Material Science
@@ -14,29 +16,24 @@ Please see the report for an in depth formulation.
 
 """
 
-"""
-!% position and velocity data of all 9 planets in the solar system with Sun at origin
-!% position in units of AU ( 1AU = 1.49597870691E+11 meter )
-!% velocity in units of AU/day ( 1day = 86400 second )
-"""
-
 import numpy as np
 import sys
 import itertools
 import time
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
+UNITS_OF_MASS = 1E29 #units of mass in kg
+DT = 0.5 #simulation timestep
+ITERATIONS = 10*730
 
-GRAVITATIONAL_CONST = 6.67408E-11
-UNITS_OF_MASS = 10E29 #"""units of mass in kg"""
-ASTRO_POS = 1.49597870691E+11
-ASTRO_DAY = 86400
-TIMESTEP = 1000
+AU = 1.49597870691E+11
+AUday = 1.49597870691E+11/86400.
+G_CONST = 6.67408E-11/(AUday**2)/AU
 
-planet1_x = []
-planet1_y = []
-planet2_x = []
-planet2_y = []
+pos_x = np.zeros((10,ITERATIONS), dtype=np.float)
+pos_y = np.zeros((10,ITERATIONS), dtype=np.float)
+pos_z = np.zeros((10,ITERATIONS), dtype=np.float)
 
 def load_planets():
 
@@ -47,100 +44,131 @@ def load_planets():
 
     return names, mass, position, velocity
 
+class Particle:
+
+    def __init__(self,ID, name, mass, position, velocity):
+
+        self.ID = ID
+        self.name = name
+        self.mass = mass
+
+        # position and velocity arrays containing the informations
+        # on current pos[0], previous pos[-1], next pos[1]
+        self._pos = np.stack((position, np.zeros(3), np.zeros(3)), axis=0)
+        self._vel = np.stack((velocity, np.zeros(3), np.zeros(3)), axis=0)
+
+        # net force on particle
+        self.net_force = np.zeros(3,dtype=np.float)
+
+    def pos(self, timestamp):
+        return self._pos[timestamp,:]
+
+    def vel(self, timestamp):
+        return self._vel[timestamp,:]
+
+    def update_coord(self):
+        self.pos = np.stack((self.pos(1),np.zeros(3),self.pos(0)), axis=0)
+        self.vel = np.stack((self.vel(1),np.zeros(3),self.vel(0)), axis=0)
+        self.net_force = np.zeros(3,dtype=np.float)
+
+
+
 
 class System:
 
-    def __init__(self, name, mass):
+    def __init__(self, name):
 
-        self.planet_name = name
-        self.t = 0
-        self.n_planets = len(self.planet_name)
+        self.name = name
+        self.planets = []
+        self.time = 0
 
-        self.p_mass = np.resize(mass, (len(mass), len(mass)))
-        self.p_mass_matrix = None
+        # the energy values are instantaneous values
+        # note: history values are not saved on memory
+        self.k_energy = None
+        self.u_energy = None
 
-        self.p_pos_previous = None
-        self.p_vel_previous = None
+    def add_planet(self,ID, name, mass, position, velocity):
 
-        self.p_pos_current = None
-        self.p_vel_current = None
+        self.planets.append(Particle(ID,name, mass, position, velocity))
 
-        self.p_pos_next = None
-        self.p_vel_next = None
+    # Routine for updating the planets coordinates. It is foundamental for optimal handling
+    # of positions and velocities at different timestamp (t-dt, t, t+dt)
+    # //the routine itself calls a routine implemented in the class particle
+    # //the sun coordinates are not updated. It is assumed stationary (sun planet_ID = 0)
+    def update_coordinates(self):
+        for planet in self.planets:
+            if(planet.ID > 0):
+                planet.update_coord()
 
+        # Setting instantaneous energies to zeros, although the routine for computing both
+        # energies already includes this initialization
+        self.k_energy = 0
+        self.u_energy = 0
 
-        self.total_energy = None
-        self.potential_energy = None
-        self.kinetic_energy = None
+    # Routine for computing the force between two planets
+    # //the function is called by compute_system_force which computes the force for all planets
+    def compute_force(self, planet_1, planet_2, t_stamp):
 
+        distance_cubed = (np.sqrt(np.linalg.norm(planet_1.pos(t_stamp) - planet_2.pos(t_stamp))))**3
+        force = G_CONST*planet_1.mass*planet_2.mass * np.reciprocal(distance_cubed)*(planet_1.pos(t_stamp) - planet_2.pos(t_stamp))
+        planet_1.net_force += -force
+        planet_2.net_force += +force
 
-    def set_p_mass_matrix(self):
-        mass = self.p_mass
-        multiplied_mass = np.multiply(mass, np.transpose(mass))
-        np.fill_diagonal(multiplied_mass,0)
-        self.p_mass_matrix = multiplied_mass
+    # Routine for computing the force between all planets in the system
+    # //t_stamp {-1,0,1} represents the position stored at t-dt, t and t+dt
+    def compute_system_force(self, t_stamp):
+        for planet_1, planet_2 in itertools.combinations(self.planets, 2):
+            self.compute_force(planet_1, planet_2, t_stamp)
 
+    # Routine that implements the Euler differential integrator
+    # //the number of iterations is set globally
+    # //the routine is essentially a double for loop -> slow for large number of particles
+    # //a routine for saving computational results on an output file is called for each iteration
+    def evolve_euler(self):
+        iter = 0
+        p_id = 0
+        while iter < ITERATIONS:
+            self.compute_system_force(0)
+            for planet in self.planets:
+                if(planet.name!="Sun"):
+                    new_pos = planet.pos(0) + DT*planet.vel(0) + planet.net_force*DT*DT/planet.mass
+                    new_vel = planet.vel(0) + DT*planet.net_force/planet.mass
 
-    def set_initial_condition(self, pos, velocity):
-        if(self.t != 0):
-            print("Error: setting intial condition for t>0")
-        position = pos.transpose()
-        dim = len(position[0,:])
-        self.p_pos_current = np.stack(( np.resize(position[0,:], (dim, dim)),
-                                        np.resize(position[1,:], (dim, dim)),
-                                        np.resize(position[2,:], (dim, dim))),
-                                        axis=0)
-        self.p_vel_current = velocity.transpose()
-        self.set_p_mass_matrix()
+                    planet._pos[1,:] = new_pos
+                    planet._vel[1,:] = new_vel
 
+                    #save positions for plotting
+                    pos_x[p_id,iter] = new_pos[0]
+                    pos_y[p_id,iter] = new_pos[1]
+                    pos_z[p_id,iter] = new_pos[2]
 
-    def net_force(self, pos):
+                p_id += 1
+            p_id = 0
 
-        distance = np.abs(pos - pos.transpose((0, 2, 1)))
-        distance_non_null = np.where(distance == 0, 1, distance)
-        distance_square_matrix = np.reciprocal(distance_non_null**2)
-        mass_stack = np.stack((self.p_mass_matrix, self.p_mass_matrix, self.p_mass_matrix),axis=0)
-        net_force_matrix = GRAVITATIONAL_CONST*np.multiply(distance_square_matrix, mass_stack)
-        return np.sum(net_force_matrix, axis=1)
+            iter += 1
+            self.time += DT
+            self.update_coordinates()
 
-    def update_current(self, next_pos, next_vel):
+    # Routine for computing the kinetic energy of the system (evaluated at timestamp t)
+    # //no need to store k_energy for each individual planet
+    def compute_k_energy(self, vel):
 
-        self.p_pos_previous = self.p_pos_current
-        self.p_vel_previous = self.p_vel_current
+        # kinetic energy is set to zero each time it is required
+        # to avoid unexpected values
+        self.k_energy = 0
+        for planet in self.planets:
+            self.k_energy += 0.5*planet.mass*np.linalg.norm(planet.v_current())
 
-        self.p_pos_current = np.stack((next_pos, next_pos, next_pos), axis=0)
-        dim = len(next_pos[0,:])
-        self.p_pos_current = np.stack(( np.resize(next_pos, (dim, dim)),
-                                        np.resize(next_pos, (dim, dim)),
-                                        np.resize(next_pos, (dim, dim))),
-                                        axis=0)
-        self.p_vel_current = next_vel
+    # Routine for computing the potential energy of the system (evaluated at timestamp t)
+    # //as for compute_system_force the routine is inefficient for large number of particles
+    def compute_u_energy(self, pos):
 
-        self.p_pos_next = None
-        self.p_vel_next = None
-
-    def evolve_euler(self,iterations):
-        iter =0
-
-        while iter<iterations:
-
-            next_pos = self.p_pos_current[:,:,0] + TIMESTEP*self.p_vel_current + 0.5*np.multiply(np.reciprocal(self.p_mass[0:3,:]),self.net_force(self.p_pos_current))*TIMESTEP**2
-            next_vel = self.p_vel_current + np.multiply(np.reciprocal(self.p_mass[0:3,:]),self.net_force(self.p_pos_current))*TIMESTEP
-            self.update_current(next_pos, next_vel)
-            iter+=1
-
-            planet1_x.append(next_pos[0,6])
-            planet1_y.append(next_pos[1,6])
-            planet2_x.append(next_pos[0,7])
-            planet2_y.append(next_pos[1,7])
-
-
-
-
-    #def k_energy(self, vel):
-
-    #def u_energy(self, pos):
-
+        # potential energy is set to zero each time it is required
+        # to avoid unexpected values
+        self.u_energy = 0
+        for planet_1, planet_2 in itertools.combinations(self.planets, 2):
+            distance = np.sqrt(np.linalg.norm(planet_1.pos[t_stamp, :] - planet_2.pos[t_stamp, :]))
+            self.u_energy += -G_CONST*planet_1.mass*planet_2.mass * np.reciprocal(distance)
 
 
 
@@ -148,17 +176,23 @@ if __name__ == '__main__':
 
     planets_name, planets_mass, planets_pos, planets_vel = load_planets()
 
-    SolarSystem = System(planets_name, planets_mass)
-    SolarSystem.set_initial_condition(planets_pos, planets_vel)
+    SolarSystem = System("SolarSystem")
+    for i in range(len(planets_name)):
+        SolarSystem.add_planet(i,planets_name[i], planets_mass[i]*UNITS_OF_MASS, planets_pos[i], planets_vel[i])
 
-    SolarSystem.evolve_euler(10000)
+
+
+    SolarSystem.evolve_euler()
 
     with plt.style.context(['science', 'dark_background']):
-        fig, ax = plt.subplots()
-
-        ax.plot(planet1_x, planet1_y, label="planet1")
-        ax.plot(planet2_x, planet2_y, label="planet2")
-
-        ax.legend(title='Planets')
-        ax.autoscale(tight=True)
-        fig.savefig('./fig1.pdf')
+        fig = plt.figure()
+        ax = fig.add_subplot()
+        for p in SolarSystem.planets:
+            if(p.ID < 4):
+                ax.plot(pos_x[p.ID,:], pos_y[p.ID,:], label=p.name)
+        #ax.plot(pos_x[0,:], pos_y[0,:], label="Sun")
+        #ax.legend(title='Order')
+        #ax.set_xlim([-10E11,10E11])
+        #ax.set_ylim([-10E11,10E11])
+        #ax.autoscale(tight=True)
+        fig.savefig('./Euler_Integrator.pdf')
