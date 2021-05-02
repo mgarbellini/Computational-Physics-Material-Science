@@ -347,7 +347,7 @@ if __name__ == '__main__':
     # //default lenght of simulation: 500 years
     # //type of integrator is taken as argument
     if(len(sys.argv) == 1):
-        print("Error: undefined integrator. Options (case sensitive) are euler, verlet, velocity-verlet")
+        print("Error: integrator not provided. Options (case sensitive) are euler, verlet, velocity-verlet")
         sys.exit()
 
     integrator = sys.argv[1]
