@@ -28,15 +28,23 @@ class System:
 
     def __init__(self, n):
 
+        # Particles variables (position, velocity, net force and mass)
         self.pos = np.zeros((n**3, 3), dtype = np.float)
         self.vel = np.zeros((n**3, 3), dtype = np.float)
         self.force = np.zeros((n**3, 3), dtype = np.float)
-        self.mass = 1 #(float) //the particles are assumed to be indentical (not in MQ terms)
+        self.mass = 1 #the particles are assumed to be indentical (not in MQ terms)
 
+        # System variables
         self.N = n**3
         self.L = None
         self.number_density = None
+        self.cutoff_radius = None
 
+        # Neighbor variables
+        self.neighbor_cutoff_radius = None
+        self.neighbor_list = None
+
+        # Energy and Thermodynamics variables
         self.u_energy = None
         self.kinetic = None
         self.potential = None
@@ -112,10 +120,29 @@ class System:
         ax.set_zlim([0,self.L])
         plt.show()
 
-    # Routine for computing the shortest distance between two given two particles,
+    # Routine for computing the shortest distance between two given particles,
     # obeying the necessary PBC and implementing the minimum image convention (cfr. notes)
-    # //the best way is to create a (NxN) matrix for x,y and z. This allows to return
-    def shortest_distance(self):
+    # //the shortest distance is found by looping over the 3 axis and computing the following
+    # // Δx = Δx - L*int(Δx/L)
+    def shortest_distance(self, p1, p2):
+        d_x = self.pos[p2,0] - self.pos[p1,0]
+        d_y = self.pos[p2,1] - self.pos[p1,1]
+        d_z = self.pos[p2,2] - self.pos[p1,2]
+        return np.sqrt((d_x - self.L*int(d_x/self.L))**2 + (d_y - self.L*int(d_y/self.L))**2 + (d_z - self.L*int(d_z/self.L))**2)
+
+    # Routine for computing the neighbor list of the particles in the system
+    # given a specified neighbor-cutoff radius
+    def compute_neighbor_list(self, cutoff):
+        self.neighbor_list = []
+        for i in range(self.N):
+            a_list = []
+            for j in range(self.N):
+                if i==j:
+                    continue
+                if self.shortest_distance(i,j) < cutoff:
+                    a_list.append(j)
+
+            self.neighbor_list.append(a_list.copy()) #remember that lists are mutable objects, thus appending a copy
 
 
 
@@ -142,7 +169,10 @@ class System:
 
 if __name__ == '__main__':
 
-    ensemble = System(4)
+    ensemble = System(3)
     ensemble.set_number_density(0.1)
     ensemble.distribute_position_cubic_lattice()
-    ensemble.plot_positions()
+
+
+    ensemble.compute_neighbor_list(3)
+    print(ensemble.neighbor_list)
