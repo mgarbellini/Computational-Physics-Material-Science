@@ -316,7 +316,7 @@ class System:
             self.compute_system_force(1)
             for planet in self.planets:
                 if(planet.ID != 0):
-                    new_vel = planet.vel() + 0.5*DT*DT*(planet.net_force+planet.v_verlet_net_force)/planet.mass
+                    new_vel = planet.vel() + 0.5*DT*(planet.net_force+planet.v_verlet_net_force)/planet.mass
 
             iter += 1
             self.time += DT
