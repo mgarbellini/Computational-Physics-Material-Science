@@ -22,7 +22,8 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
 BOLTZ = 1 #Boltzmann constant Kb
-A_LATTICE = 1
+A_LATTICE = 1 #Atom lattice interdistance
+DT = 1 #Simulation timestep
 
 class System:
 
@@ -38,10 +39,12 @@ class System:
         self.N = n**3
         self.L = None
         self.number_density = None
-        self.cutoff_radius = None
+        self.r_cutoff = None
+        self.epsilon = None
+        self.sigma = None
 
         # Neighbor variables
-        self.neighbor_cutoff_radius = None
+        self.neighbor_r_cutoff = None
         self.neighbor_list = None
 
         # Energy and Thermodynamics variables
@@ -132,18 +135,66 @@ class System:
 
     # Routine for computing the neighbor list of the particles in the system
     # given a specified neighbor-cutoff radius
-    def compute_neighbor_list(self, cutoff):
+    def compute_neighbor_list(self):
         self.neighbor_list = []
         for i in range(self.N):
             a_list = []
             for j in range(self.N):
                 if i==j:
                     continue
-                if self.shortest_distance(i,j) < cutoff:
+                if self.shortest_distance(i,j) < self.neighbor_r_cutoff:
                     a_list.append(j)
 
             self.neighbor_list.append(a_list.copy()) #remember that lists are mutable objects, thus appending a copy
 
+    # Routine for computing the force on a given particle
+    # //adds a contribution to net_force of the ith and jth particles
+    # //note that explicit power calculation, i.e. x*x*...*x is almost double as fast as x**n
+    def compute_force(self, p1, p2):
+        distance = self.shortest_distance(p1, p2)
+        if(distance<self.r_cutoff):
+            versor = (self.pos[p1,:] - self.pos[p2, :])/np.linalg.norm(self.pos[p1,:] - self.pos[p2, :])
+            force = 48*self.epsilon*self.sigma**12/distance**13 - 24*self.epsilon*self.sigma**6/distance**7
+            self.force[p1, :] += -force*versor
+            self.force[p2, :] += force*versor
+
+    # Routine for computing the force of the system considering the
+    # entire ensemble (only forcing the r_cutoff)
+    def compute_force_system(self):
+        self.force = np.zeros((self.N, 3), dtype = np.float)
+        for p1, p2 in itertools.combinations(np.arange(0,self.N,1), 2):
+            self.compute_force(p1,p2)
+
+    # Routine for computing the force of the system using the neighbor_list
+    def compute_force_neighbor(self):
+        self.force = np.zeros((self.N, 3), dtype = np.float)
+        for p1 in range(self.N):
+            for p2 in self.neighbor_list[p1]:
+                self.compute_force(p1,p2)
+
+    # Routine for evolving the system and calculating trajectories. The algorithm implemented
+    # is the known Velocity-Verlet.
+    # //the timestep and iterations are taken as arguments
+    #
+    # The Velocity-Verlet integrator is given by the following equations for position and velocities
+    # //note that in practice this equations are vectorial
+    # Eq(3) r(t+dt) = r(t) + v(t) * dt + 1/2m * dt^2 * f(t)
+    # Eq(4) v(t+dt) = v(t) + dt/2m * [f(t) + f(t+dt)]
+    def evolve_system(self, iterations, timestep = 1):
+        iter = 0
+        while iter < iterations:
+
+            # force computation at current coordinates (timestamp = 0)
+            self.compute_force_system()
+            force_previous = self.force
+
+            # update system positions
+            self.pos += DT*self.vel + 0.5*DT*DT*force_previous/self.mass
+
+            # force computation at new coordinates
+            self.compute_force_system()
+            self.vel += 0.5*DT*(self.force + force_previous)/self.mass
+            iter += 1
 
 
     # Set of routines for setting system variables. This is useful since it allows for a
@@ -173,6 +224,10 @@ if __name__ == '__main__':
     ensemble.set_number_density(0.1)
     ensemble.distribute_position_cubic_lattice()
 
+    ensemble.neighbor_r_cutoff = 7
+    ensemble.r_cutoff = 100
+    ensemble.sigma = 1
+    ensemble.epsilon = 1
+    ensemble.compute_neighbor_list()
 
-    ensemble.compute_neighbor_list(3)
-    print(ensemble.neighbor_list)
+    ensemble.evolve_system(5)
