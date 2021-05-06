@@ -172,6 +172,16 @@ class System:
             for p2 in self.neighbor_list[p1]:
                 self.compute_force(p1,p2)
 
+    # Routine for computing the force and the potential using a vectorized
+    # implementation. This leads to roughly an order of magnitude better performance
+    # that the naive double-for-loop implementation.
+    # This is done by creating a NxN position matrix later manipulated by numpy routines.
+    def compute_force_vectorized(self):
+        p_matrix_x = self.pos[:,0]
+        p_matrix_y = self.pos[:,1]
+        p_matrix_z = self.pos[:,2]
+        print("yet to be implemented")
+
     # Routine for evolving the system and calculating trajectories. The algorithm implemented
     # is the known Velocity-Verlet.
     # //the timestep and iterations are taken as arguments
@@ -223,7 +233,8 @@ if __name__ == '__main__':
     ensemble = System(3)
     ensemble.set_number_density(0.1)
     ensemble.distribute_position_cubic_lattice()
-
+    ensemble.plot_positions()
+    """
     ensemble.neighbor_r_cutoff = 7
     ensemble.r_cutoff = 100
     ensemble.sigma = 1
@@ -231,3 +242,4 @@ if __name__ == '__main__':
     ensemble.compute_neighbor_list()
 
     ensemble.evolve_system(5)
+    """
