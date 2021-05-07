@@ -5,6 +5,7 @@ import time
 import math
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+import integrator
 
 N = 2
 
@@ -17,9 +18,6 @@ cubic_lattice = cubic_lattice * (1/N)
 
 # rescaling and shifting
 
-
-print(cubic_lattice[:,0])
-
 #compute shortest distance
 # r_ij
 X = np.transpose(cubic_lattice[:,0] * np.ones((len(cubic_lattice[:,0]), len(cubic_lattice[:,0]))))
@@ -31,5 +29,3 @@ r_z = Z - np.transpose(Z)
 r = np.sqrt(r_x**2 + r_y**2 + r_z**2)+ np.eye(N**3)
 r_rec = np.reciprocal(r) - np.eye(N**3)
 f_x = r_rec**13 - r_rec**7
-
-print(f_x)
