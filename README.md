@@ -5,5 +5,5 @@ The following are the proposed simulations/tutorials/exercise sheets (in chronol
 
 - Exercise Sheet 01: Solar system and planetary evolution
 - Tutorial 01: Simple projectile - reviewing python code
-- Excercise Sheet 02: Molecular Dynamics w/ Lennard-Jones potential
+- Exercise Sheet 02: Molecular Dynamics w/ Lennard-Jones potential
 
