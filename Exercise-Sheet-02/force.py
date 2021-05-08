@@ -15,7 +15,9 @@ Latest update: May 7th 2021
 import numpy as np
 import system
 
-
+epsilon = None
+sigma = None
+cutoff = None
 
 def LennardJones():
 
@@ -38,12 +40,16 @@ def LennardJones():
     # //I matrix are added and then subtracted in order to avoid divide by zero
     r_reciprocal = np.reciprocal(np.sqrt(r_x**2 + r_y**2 + r_z**2)+ np.eye(system.N**3)) - np.eye(system.N**3)
 
+    # Exclude distances longer than the cutoff radius
+    # by setting r to zero
+    r_reciprocal = np.where(r_reciprocal < np.reciprocal(cutoff), r_reciprocal, 0)
+
     # Compute force with Lennard Jones potential
     # //this evaluation already contains direction information
     # //f_x, f_y, f_z are (N,N) matrices (with zero on the diagonal)
-    f_x = 24*system.epsilon*(2*system.sigma**12*np.multiply(r_x, np.power(r_reciprocal, 14)) - system.sigma**6*np.multiply(r_x, np.power(r_reciprocal, 8)))
-    f_y = 24*system.epsilon*(2*system.sigma**12*np.multiply(r_y, np.power(r_reciprocal, 14)) - system.sigma**6*np.multiply(r_y, np.power(r_reciprocal, 8)))
-    f_z = 24*system.epsilon*(2*system.sigma**12*np.multiply(r_z, np.power(r_reciprocal, 14)) - system.sigma**6*np.multiply(r_z, np.power(r_reciprocal, 8)))
+    f_x = 24*epsilon*(2*sigma**12*np.multiply(r_x, np.power(r_reciprocal, 14)) - sigma**6*np.multiply(r_x, np.power(r_reciprocal, 8)))
+    f_y = 24*epsilon*(2*sigma**12*np.multiply(r_y, np.power(r_reciprocal, 14)) - sigma**6*np.multiply(r_y, np.power(r_reciprocal, 8)))
+    f_z = 24*epsilon*(2*sigma**12*np.multiply(r_z, np.power(r_reciprocal, 14)) - sigma**6*np.multiply(r_z, np.power(r_reciprocal, 8)))
 
     # Net force on each particle is obtained by summation over the columns
     # //returns forces in array of dimension (N,1)
@@ -52,7 +58,7 @@ def LennardJones():
     F_z = np.sum(f_z, axis = 0)
 
     # Stack forces in (N,3) array and save in net_force of system
-    system.net_force = np.stack((F_x, F_y, F_z), axis = 0)
+    system.force = np.stack((F_x, F_y, F_z), axis = 0)
 
     # Compute the potential energy of the system taking advantage of
     # the already computed minimum distance.
@@ -60,4 +66,4 @@ def LennardJones():
     P = 4*system.epsilon*(np.power(pos_term, 12) - np.power(neg_term, 6))
 
     # Save potential energy in p_energy variable in system.py
-    system.p_energy = np.sum(np.triu(P))
+    system.potential = np.sum(np.triu(P))
