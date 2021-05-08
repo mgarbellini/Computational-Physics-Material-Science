@@ -32,7 +32,7 @@ from mpl_toolkits.mplot3d import Axes3D
 # //DT simulation timestep (days)
 DT = 0.5
 # //number of iterations (default is 500 years)
-ITERATIONS = 2*365*300
+ITERATIONS = 2*365*10
 
 # //the following are constant and conversions useful
 # //for astronomical simulations (e.g. normalized Gravitational constant)
@@ -350,7 +350,9 @@ if __name__ == '__main__':
         print("Error: integrator not provided. Options (case sensitive) are euler, verlet, velocity-verlet")
         sys.exit()
 
+
     integrator = sys.argv[1]
+
     if(integrator == 'euler'):
         SolarSystem.evolve_euler()
     elif(integrator == 'verlet'):

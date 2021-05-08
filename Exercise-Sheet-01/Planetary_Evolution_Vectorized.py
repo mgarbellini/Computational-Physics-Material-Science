@@ -151,7 +151,9 @@ if __name__ == '__main__':
     SolarSystem = System(planets_name, planets_mass)
     SolarSystem.set_initial_condition(planets_pos, planets_vel)
 
-    SolarSystem.evolve_euler(10000)
+    t_time = time.perf_counter()
+    SolarSystem.evolve_verlet(365*2*10)
+    print(time.perf_counter()-t_time)
 
     with plt.style.context(['science', 'dark_background']):
         fig, ax = plt.subplots()
