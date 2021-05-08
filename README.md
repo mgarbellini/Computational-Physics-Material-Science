@@ -1,5 +1,5 @@
 # Computational-Physics-Material-Science
-Simulations and Exercise Sheets for the lectures "Computational physics: material science" by Prof. Dzubiella at the University of Freiburg
+Simulations and Exercise Sheets for the course "Computational physics: material science" by Prof. Dzubiella at the University of Freiburg
 
 The following are the proposed simulations/tutorials/exercise sheets (in chronological order):
 
