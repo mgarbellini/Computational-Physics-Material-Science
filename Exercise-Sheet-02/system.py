@@ -23,6 +23,7 @@ N = None
 L = None #Box dimensions (per edge)
 alat = None #Lattice parameter
 rho = None #Number density
+p = None
 pos = None
 vel = None
 force = None
@@ -43,7 +44,7 @@ def vel_random(default = 'uniform'):
     global vel
 
     if(default == 'uniform'):
-        vel = np.random.uniform(-1.0, 1.0, (3, N))
+        vel = np.random.uniform(-1.0, 1.0, (N,3))
     elif(default == 'boltzmann'):
         print("yet to be implemented")
 
@@ -102,3 +103,8 @@ def compute_temperature():
 def compute_kinetic():
     global kinetic
     kinetic = 0.5*mass*np.sum(np.multiply(vel, vel))
+
+# Routine for computing energies. Usefull for printing values
+def compute_energy():
+    global energy
+    energy = kinetic + potential

@@ -29,21 +29,24 @@ import force
 # Eq(4) v(t+dt) = v(t) + dt/2m * [f(t) + f(t+dt)]
 #
 # NOTE that a first force computation is needed outside this routine
-def VelocityVerlet(iterations = 1):
+def velocity_verlet(iterations = 1):
     iter = 0
     while iter < iterations:
 
         # update system positions
         # periodic boundary conditions need to be respected
         new_positions = (system.pos + settings.DT*system.vel + 0.5*settings.DT**2*system.force/system.mass)
-        system.pos = np.fmod(new_positions, system.L)
+        system.pos = np.mod(new_positions, system.L)
 
         # save current force to local variable
         force_previous = system.force
 
         # force computation at new coordinates
-        force.LennardJones()
+        force.lennard_jones()
         system.vel += 0.5*settings.DT*(system.force + force_previous)/system.mass
+
+        # compute kinetic energy
+        system.compute_kinetic()
 
         # update iter count when needed (by default iterations = 1)
         iter += 1

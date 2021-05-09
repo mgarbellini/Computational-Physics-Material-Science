@@ -18,13 +18,14 @@ import system
 epsilon = None
 sigma = None
 cutoff = None
+potential_shift = None
 
-def LennardJones():
+def lennard_jones():
 
     # (N,N) matrices containing all particles' positions
     X = system.pos[:,0] * np.ones((system.N, system.N))
     Y = system.pos[:,1] * np.ones((system.N, system.N))
-    Y = system.pos[:,2] * np.ones((system.N, system.N))
+    Z = system.pos[:,2] * np.ones((system.N, system.N))
 
     # Compute "absolute" distance between particles (no PBC and MIC)
     r_x = np.transpose(X) - X
@@ -38,7 +39,7 @@ def LennardJones():
 
     # Compute reciprocal of r
     # //I matrix are added and then subtracted in order to avoid divide by zero
-    r_reciprocal = np.reciprocal(np.sqrt(r_x**2 + r_y**2 + r_z**2)+ np.eye(system.N**3)) - np.eye(system.N**3)
+    r_reciprocal = np.reciprocal(np.sqrt(r_x**2 + r_y**2 + r_z**2) + np.eye(system.N)) - np.eye(system.N)
 
     # Exclude distances longer than the cutoff radius
     # by setting r to zero
@@ -58,12 +59,17 @@ def LennardJones():
     F_z = np.sum(f_z, axis = 0)
 
     # Stack forces in (N,3) array and save in net_force of system
-    system.force = np.stack((F_x, F_y, F_z), axis = 0)
+    system.force = np.stack((F_x, F_y, F_z), axis = 1)
 
     # Compute the potential energy of the system taking advantage of
     # the already computed minimum distance.
-    neg_term = + system.sigma*r_reciprocal
-    P = 4*system.epsilon*(np.power(pos_term, 12) - np.power(neg_term, 6))
+    term = sigma*r_reciprocal
+    P = 4*epsilon*(np.power(term, 12) - np.power(term, 6)) + potential_shift
 
     # Save potential energy in p_energy variable in system.py
     system.potential = np.sum(np.triu(P))
+
+# Routine for computing the potential shift due to the potential cutoff
+def LJ_potential_shift():
+    global potential_shift
+    potential_shift = 4*epsilon*(np.power(sigma/cutoff, 12) - np.power(sigma/cutoff, 6))
