@@ -16,6 +16,8 @@ import system
 import force
 import printing
 import numpy as np
+from numba import jit, njit, vectorize
+import numba
 
 DT = None
 iter_equ = None
@@ -33,7 +35,7 @@ def init():
     force.cutoff = 2.5 #in units of sigma
 
     # SYSTEM VARIABLES
-    n = 4 #number of particles per dimension
+    n = 10 #number of particles per dimension
     system.N = n**3 #Number of particles
     system.rho = 0.1 #Number density
     system.L = n*np.cbrt(1/system.rho) #Box dimensions (per edge)
@@ -55,7 +57,7 @@ def init():
     printing.eq_pos_file = "LJMD_" + str(system.N) + "_equil_positions.txt"
     printing.eq_vel_file = "LJMD_" + str(system.N) + "_equil_velocity.txt"
 
-    printing.prod_print = 5
+    printing.prod_print = 10
     printing.prod_energy_file = "LJMD_" + str(system.N) + "_prod_energy.txt"
     printing.prod_temp_file = "LJMD_" + str(system.N) + "_prod_temperature.txt"
     printing.prod_pos_file = "LJMD_" + str(system.N) + "_prod_positions.txt"

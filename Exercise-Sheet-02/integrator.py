@@ -17,6 +17,7 @@ import numpy as np
 import system
 import settings
 import force
+from numba import jit, njit, vectorize
 
 
 # Routine for evolving the system and calculating trajectories. The algorithm implemented
@@ -29,6 +30,8 @@ import force
 # Eq(4) v(t+dt) = v(t) + dt/2m * [f(t) + f(t+dt)]
 #
 # NOTE that a first force computation is needed outside this routine
+
+
 def velocity_verlet(iterations = 1):
     iter = 0
     while iter < iterations:

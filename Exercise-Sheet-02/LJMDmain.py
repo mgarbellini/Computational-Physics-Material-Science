@@ -19,6 +19,7 @@ Latest update: May 8th 2021
 import numpy as np
 import sys
 import time
+from numba import jit, njit, vectorize
 
 # Tailored modules/namespaces
 import const # physical constants
@@ -31,7 +32,6 @@ import integrator # integration scheme routines
 
 if __name__ == '__main__':
     settings.init()
-    printing.plot_system("system", 0)
 
     ttime = time.perf_counter()
     ######## EQUILIBRATION RUN #######
@@ -81,5 +81,4 @@ if __name__ == '__main__':
 
     print(time.perf_counter()-ttime)
 
-    printing.plot_system("final_prod",iter)
     printing.closefiles("production")

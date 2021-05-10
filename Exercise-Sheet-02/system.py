@@ -16,7 +16,7 @@ import const
 import force
 import integrator
 import itertools
-
+from numba import jit, njit, vectorize
 
 # Particles variables (position, velocity, net force and mass)
 N = None

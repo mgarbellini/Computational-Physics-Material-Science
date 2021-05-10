@@ -14,12 +14,15 @@ Latest update: May 7th 2021
 
 import numpy as np
 import system
+from numba import jit, njit, vectorize
 
 epsilon = None
 sigma = None
 cutoff = None
 potential_shift = None
 
+
+@njit()
 def lennard_jones():
 
     # (N,N) matrices containing all particles' positions
@@ -33,9 +36,9 @@ def lennard_jones():
     r_z = np.transpose(Z) - Z
 
     # Compute shortest distance according to PBC and MIC (minimum image convention)
-    r_x = r_x - system.L * (np.divide(r_x, system.L)).astype(int)
-    r_y = r_y - system.L * (np.divide(r_y, system.L)).astype(int)
-    r_z = r_z - system.L * (np.divide(r_z, system.L)).astype(int)
+    r_x = r_x - system.L * np.rint(np.divide(r_x, system.L))
+    r_y = r_y - system.L * np.rint(np.divide(r_y, system.L))
+    r_z = r_z - system.L * np.rint(np.divide(r_z, system.L))
 
     # Compute reciprocal of r
     # //I matrix are added and then subtracted in order to avoid divide by zero
