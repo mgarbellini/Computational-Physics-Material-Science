@@ -21,13 +21,19 @@ sigma = None
 cutoff = None
 potential_shift = None
 
+#Needed for Numba
+N = None
+L = None #Box dimensions (per edge)
+pos = None
+force = None
+potential = None
 
+@njit
 def lennard_jones():
-
     # (N,N) matrices containing all particles' positions
-    X = system.pos[:,0] * np.ones((system.N, system.N))
-    Y = system.pos[:,1] * np.ones((system.N, system.N))
-    Z = system.pos[:,2] * np.ones((system.N, system.N))
+    X = pos[:,0] * np.ones((N, N))
+    Y = pos[:,1] * np.ones((N, N))
+    Z = pos[:,2] * np.ones((N, N))
 
     # Compute "absolute" distance between particles (no PBC and MIC)
     r_x = np.transpose(X) - X
@@ -35,13 +41,13 @@ def lennard_jones():
     r_z = np.transpose(Z) - Z
 
     # Compute shortest distance according to PBC and MIC (minimum image convention)
-    r_x = r_x - system.L * np.rint(np.divide(r_x, system.L))
-    r_y = r_y - system.L * np.rint(np.divide(r_y, system.L))
-    r_z = r_z - system.L * np.rint(np.divide(r_z, system.L))
+    r_x = r_x - L * np.rint(np.divide(r_x, L))
+    r_y = r_y - L * np.rint(np.divide(r_y, L))
+    r_z = r_z - L * np.rint(np.divide(r_z, L))
 
     # Compute reciprocal of r
     # //I matrix are added and then subtracted in order to avoid divide by zero
-    r_reciprocal = np.reciprocal(np.sqrt(r_x**2 + r_y**2 + r_z**2) + np.eye(system.N)) - np.eye(system.N)
+    r_reciprocal = np.reciprocal(np.sqrt(r_x**2 + r_y**2 + r_z**2) + np.eye(N)) - np.eye(N)
 
     # Exclude distances longer than the cutoff radius
     # by setting r to zero
@@ -61,15 +67,21 @@ def lennard_jones():
     F_z = np.sum(f_z, axis = 0)
 
     # Stack forces in (N,3) array and save in net_force of system
-    system.force = np.stack((F_x, F_y, F_z), axis = 1)
+    force = np.stack((F_x, F_y, F_z), axis = 1)
 
     # Compute the potential energy of the system taking advantage of
     # the already computed minimum distance.
     term = sigma*r_reciprocal
     P = 4*epsilon*(np.power(term, 12) - np.power(term, 6)) + potential_shift
 
-    # Save potential energy in p_energy variable in system.py
-    system.potential = np.sum(np.triu(P))
+    # Save potential energy in p_energy variable in py
+    potential = np.sum(np.triu(P))
+
+    return force, potential
+
+def save_force_potential():
+    global force, potential
+    force, potential = lennard_jones()
 
 # Routine for computing the potential shift due to the potential cutoff
 def LJ_potential_shift():

@@ -26,7 +26,7 @@ import const # physical constants
 import system # system descriptions and routine
 import force # force routines
 import settings # simulation input values and initialization
-import printing # various printing and plotting routines
+#import printing # various printing and plotting routines
 import integrator # integration scheme routines
 
 
@@ -35,7 +35,7 @@ if __name__ == '__main__':
 
     ttime = time.perf_counter()
     ######## EQUILIBRATION RUN #######
-    printing.openfiles("equilibration")
+    #printing.openfiles("equilibration")
 
     plot_iter = 0
     iter = 1
@@ -50,20 +50,20 @@ if __name__ == '__main__':
         # Integrate system (if iter = 0 the force needs to be computed
         # integrator module)
         if(iter == 0):
-            force.lennard_jones()
+            force.save_force_potential()
         integrator.velocity_verlet()
         system.compute_energy()
 
         # Printing routine
-        if(iter%printing.eq_print==0):
-            printing.print_system("equilibration")
+        #if(iter%printing.eq_print==0):
+            #printing.print_system("equilibration")
         iter+= 1
         plot_iter+=1
 
-    printing.closefiles("equilibration")
+    #printing.closefiles("equilibration")
 
     ######## PRODUCTION RUN #######
-    printing.openfiles("production")
+    #printing.openfiles("production")
 
     iter = 0
     while iter < settings.iter_prod:
@@ -73,12 +73,12 @@ if __name__ == '__main__':
         system.compute_energy()
 
         # Printing routine
-        if(iter%printing.prod_print == 0):
-            printing.print_system("production")
+        #if(iter%printing.prod_print == 0):
+            #printing.print_system("production")
 
         iter+= 1
         plot_iter+=1
 
     print(time.perf_counter()-ttime)
 
-    printing.closefiles("production")
+    #printing.closefiles("production")
