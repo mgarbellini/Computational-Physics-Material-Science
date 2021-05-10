@@ -22,7 +22,6 @@ cutoff = None
 potential_shift = None
 
 
-@njit()
 def lennard_jones():
 
     # (N,N) matrices containing all particles' positions
