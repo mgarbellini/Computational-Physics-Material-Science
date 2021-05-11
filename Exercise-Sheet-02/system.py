@@ -19,15 +19,17 @@ import itertools
 from numba import jit, njit, vectorize
 
 # Particles variables (position, velocity, net force and mass)
-N = None
-L = None #Box dimensions (per edge)
+
+
 alat = None #Lattice parameter
 rho = None #Number density
 p = None
-pos = None
-vel = None
-force = None
+
 mass = None
+N = None
+L = None #Box dimensions (per edge)
+pos = None
+force = None
 
 # Energy and Thermodynamics variables
 energy = None
@@ -64,9 +66,7 @@ def vel_shift():
 # is given by L
 # //the default a_lattice is defined globally
 def distribute_position_cubic_lattice():
-    global L
-    global pos
-
+    global L, pos
     if(L == None):
         if(rho == None):
             print("Error: unspecified number density and box volume. Unable to distribute positions over cubic lattice")

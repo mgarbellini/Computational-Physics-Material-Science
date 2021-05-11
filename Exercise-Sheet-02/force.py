@@ -21,8 +21,42 @@ sigma = None
 cutoff = None
 potential_shift = None
 
+#Needed for Numba
 
-def lennard_jones():
+
+@njit
+def lennard_jones(force, pos, L, N):
+
+    potential = 0
+    r_x = 0
+    r_y = 0
+    r_z = 0
+
+    for i in range(N):
+        for j in range(i+1, N):
+
+            r_x = pos[i, 0] - pos[j,0]
+            r_y = pos[i, 1] - pos[j,1]
+            r_z = pos[i, 2] - pos[j,2]
+            r_x = r_x - L * int(r_x/L)
+            r_y = r_y - L * int(r_y/L)
+            r_z = r_z - L * int(r_z/L)
+            r = np.sqrt(r_x*r_x + r_y*r_y + r_z*r_z)
+
+            force[i,0] += 24*epsilon*(2*sigma**12*r_x/r**14 - sigma**6*r_x/r**8)
+            force[i,1] += 24*epsilon*(2*sigma**12*r_y/r**14 - sigma**6*r_y/r**8)
+            force[i,2] += 24*epsilon*(2*sigma**12*r_z/r**14 - sigma**6*r_z/r**8)
+
+            force[j,0] += -24*epsilon*(2*sigma**12*r_x/r**14 - sigma**6*r_x/r**8)
+            force[j,1] += -24*epsilon*(2*sigma**12*r_y/r**14 - sigma**6*r_y/r**8)
+            force[j,2] += -24*epsilon*(2*sigma**12*r_z/r**14 - sigma**6*r_z/r**8)
+
+            potential += 2*4*epsilon*(1/r**12 - 1/r**6) + potential_shift
+
+    return force, potential
+
+
+def lennard_jones_numpy(pos, L, N):
 
     # (N,N) matrices containing all particles' positions
     X = system.pos[:,0] * np.ones((system.N, system.N))
@@ -61,15 +95,18 @@ def lennard_jones():
     F_z = np.sum(f_z, axis = 0)
 
     # Stack forces in (N,3) array and save in net_force of system
-    system.force = np.stack((F_x, F_y, F_z), axis = 1)
+    force = np.stack((F_x, F_y, F_z), axis = 1)
 
     # Compute the potential energy of the system taking advantage of
     # the already computed minimum distance.
     term = sigma*r_reciprocal
     P = 4*epsilon*(np.power(term, 12) - np.power(term, 6)) + potential_shift
 
-    # Save potential energy in p_energy variable in system.py
-    system.potential = np.sum(np.triu(P))
+    # Save potential energy in p_energy variable in py
+    potential = np.sum(np.triu(P))
+
+    return force, potential
+
 
 # Routine for computing the potential shift due to the potential cutoff
 def LJ_potential_shift():

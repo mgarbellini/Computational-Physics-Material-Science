@@ -14,7 +14,6 @@ Latest update: May 8th 2021
 
 import system
 import force
-import printing
 import numpy as np
 from numba import jit, njit, vectorize
 import numba
@@ -35,7 +34,7 @@ def init():
     force.cutoff = 2.5 #in units of sigma
 
     # SYSTEM VARIABLES
-    n = 10 #number of particles per dimension
+    n = 11 #number of particles per dimension
     system.N = n**3 #Number of particles
     system.rho = 0.1 #Number density
     system.L = n*np.cbrt(1/system.rho) #Box dimensions (per edge)
@@ -51,6 +50,7 @@ def init():
     rescaling_freq = 10
 
     # PRINTING VARIABLES
+    """
     printing.eq_print = 10
     printing.eq_energy_file = "LJMD_" + str(system.N) + "_equil_energy.txt"
     printing.eq_temp_file = "LJMD_" + str(system.N) + "_equil_temperature.txt"
@@ -62,6 +62,7 @@ def init():
     printing.prod_temp_file = "LJMD_" + str(system.N) + "_prod_temperature.txt"
     printing.prod_pos_file = "LJMD_" + str(system.N) + "_prod_positions.txt"
     printing.prod_vel_file = "LJMD_" + str(system.N) + "_prod_velocity.txt"
+    """
 
     # SYSTEM CONTAINERS (positions, velocities, ...)
     system.pos = np.zeros((system.N, 3), dtype = np.float)
