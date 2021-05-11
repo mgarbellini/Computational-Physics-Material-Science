@@ -26,10 +26,15 @@ rho = None #Number density
 p = None
 
 mass = None
+N = None
+L = None #Box dimensions (per edge)
+pos = None
+force = None
 
 # Energy and Thermodynamics variables
 energy = None
 kinetic = None
+potential = None
 T = None
 cT = None
 
@@ -41,7 +46,7 @@ def vel_random(default = 'uniform'):
     global vel
 
     if(default == 'uniform'):
-        vel = np.random.uniform(-1.0, 1.0, (force.N,3))
+        vel = np.random.uniform(-1.0, 1.0, (N,3))
     elif(default == 'boltzmann'):
         print("yet to be implemented")
 
@@ -51,7 +56,7 @@ def vel_random(default = 'uniform'):
 def vel_shift():
     global vel
 
-    mean = np.sum(vel, axis = 1)/force.N
+    mean = np.sum(vel, axis = 1)/N
     vel[0,:] -= mean[0]
     vel[1,:] -= mean[1]
     vel[2,:] -= mean[2]
@@ -61,20 +66,20 @@ def vel_shift():
 # is given by L
 # //the default a_lattice is defined globally
 def distribute_position_cubic_lattice():
-
-    if(force.L == None):
+    global L, pos
+    if(L == None):
         if(rho == None):
             print("Error: unspecified number density and box volume. Unable to distribute positions over cubic lattice")
             sys.exit()
         else:
-            force.L = np.cbrt(force.N/rho)
+            L = np.cbrt(N/rho)
 
     # generates position over a cubic lattice of a_lat = 1 (only positive positions)
-    S_range = list(range(0,int(np.cbrt(force.N))))
+    S_range = list(range(0,int(np.cbrt(N))))
     cubic_lattice = np.array(list(itertools.product(S_range, repeat=3)))
 
     # rescaling and shifting
-    force.pos = cubic_lattice * (force.L/np.cbrt(force.N)) + (force.L/(2*np.cbrt(force.N)))
+    pos = cubic_lattice * (L/np.cbrt(N)) + (L/(2*np.cbrt(N)))
 
 # Routine for rescaling the velocities in order to achieve
 # the target temperature for the system using Eq (7.21)
@@ -92,7 +97,7 @@ def vel_rescale():
 def compute_temperature():
     global cT
     compute_kinetic()
-    cT= 2*kinetic/(3*const.KB*force.N)
+    cT= 2*kinetic/(3*const.KB*N)
 
 # Routine for calculating the kinetic energy of the system
 def compute_kinetic():
@@ -102,4 +107,4 @@ def compute_kinetic():
 # Routine for computing energies. Usefull for printing values
 def compute_energy():
     global energy
-    energy = kinetic + force.potential
+    energy = kinetic + potential

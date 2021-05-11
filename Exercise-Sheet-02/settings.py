@@ -34,12 +34,12 @@ def init():
     force.cutoff = 2.5 #in units of sigma
 
     # SYSTEM VARIABLES
-    n = 6 #number of particles per dimension
-    force.N = n**3 #Number of particles
+    n = 11 #number of particles per dimension
+    system.N = n**3 #Number of particles
     system.rho = 0.1 #Number density
-    force.L = n*np.cbrt(1/system.rho) #Box dimensions (per edge)
-    system.alat = force.L/n #Lattice parameter
-    system.p = force.L/force.sigma
+    system.L = n*np.cbrt(1/system.rho) #Box dimensions (per edge)
+    system.alat = system.L/n #Lattice parameter
+    system.p = system.L/force.sigma
     system.T = 2. #target temperature (variable with cT "current temp also available")
 
     # SIMULATIONS VARIABLES
@@ -65,9 +65,9 @@ def init():
     """
 
     # SYSTEM CONTAINERS (positions, velocities, ...)
-    force.pos = np.zeros((force.N, 3), dtype = np.float)
-    system.vel = np.zeros((force.N, 3), dtype = np.float)
-    force.force = np.zeros((force.N, 3), dtype = np.float)
+    system.pos = np.zeros((system.N, 3), dtype = np.float)
+    system.vel = np.zeros((system.N, 3), dtype = np.float)
+    system.force = np.zeros((system.N, 3), dtype = np.float)
     system.mass = 1 #the particles are assumed to be indentical (not in MQ terms)
     system.time = 0 #probably not very useful
 

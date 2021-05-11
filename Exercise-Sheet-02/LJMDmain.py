@@ -50,7 +50,7 @@ if __name__ == '__main__':
         # Integrate system (if iter = 0 the force needs to be computed
         # integrator module)
         if(iter == 0):
-            force.save_force_potential()
+            system.force, system.potential = force.lennard_jones(np.zeros((system.N, 3), dtype = np.float), system.pos, system.L, system.N)
         integrator.velocity_verlet()
         system.compute_energy()
 

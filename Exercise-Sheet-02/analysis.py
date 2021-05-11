@@ -183,22 +183,33 @@ def velocity_distribution():
 
 def efficiency():
 
-    x = [6,8,10]
-    y = [52, 286, 1220]
-    xf = np.linspace(0,10,100)
-    yf = xf**(3.03)
+    x = [2**3,3**3,4**3,5**3,6**3,7**3,8**3,9**3,10**3]
+    y = [0.85,1.5,5,16,44,113,265,577,1220]
+    z = [5,5,9,20,49,116,259,530,1032]
+
+    w = [0.88,1,1.35,2.7,6,14,31,60,116]
+    xf = np.linspace(0,1000,100000)
+    yf = xf**(0.99)
+    zf = xf**(0.97)
+    wf = xf**(0.63)
 
     with plt.style.context(['science']):
         fig, ax = plt.subplots()
-        ax.plot(x,y, label ="Simulation data")
-        ax.plot(xf,yf, label = "fit $N^{3.03\pm 0.09}$")
+        ax.plot(x,y, label ="Numpy")
+        ax.plot(x,z, label ="Numpy+Numba")
+        ax.plot(x,w, label ="Numba")
+
+
+        #ax.plot(xf,yf)
+        #ax.plot(xf,zf)
+        #ax.plot(xf,wf)
 
         ax.set_xlabel('Number of particles')
-        ax.set_ylabel('Seconds per simulation')
+        ax.set_ylabel('Seconds per 4000 iterations')
         ax.legend()
-        ax.set_title("Implementation Efficiency")
-        fig.savefig('./figures/efficiency.pdf')
+        ax.set_title("Code performance: Numpy vs Numba")
+        fig.savefig('./efficiency.pdf')
 
 if __name__ == '__main__':
 
-    velocity_distribution()
+    efficiency()

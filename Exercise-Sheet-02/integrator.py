@@ -38,15 +38,15 @@ def velocity_verlet(iterations = 1):
 
         # update system positions
         # periodic boundary conditions need to be respected
-        new_positions = (force.pos + settings.DT*system.vel + 0.5*settings.DT**2*force.force/system.mass)
-        force.pos = np.mod(new_positions, force.L)
+        new_positions = (system.pos + settings.DT*system.vel + 0.5*settings.DT**2*system.force/system.mass)
+        force.pos = np.mod(new_positions, system.L)
 
         # save current force to local variable
-        force_previous = force.force
+        force_previous = system.force
 
         # force computation at new coordinates
-        force.save_force_potential()
-        system.vel += 0.5*settings.DT*(force.force + force_previous)/system.mass
+        system.force, system.potential = force.lennard_jones(np.zeros((system.N, 3), dtype = np.float), system.pos, system.L, system.N)
+        system.vel += 0.5*settings.DT*(system.force + force_previous)/system.mass
 
         # compute kinetic energy
         #system.compute_kinetic()
