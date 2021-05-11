@@ -55,12 +55,13 @@ def lennard_jones(force, pos, L, N):
 
     return force, potential
 
-"""
-def lennard_jones_numpy():
+
+def lennard_jones_numpy(pos, L, N):
+
     # (N,N) matrices containing all particles' positions
-    X = pos[:,0] * np.ones((N, N))
-    Y = pos[:,1] * np.ones((N, N))
-    Z = pos[:,2] * np.ones((N, N))
+    X = system.pos[:,0] * np.ones((system.N, system.N))
+    Y = system.pos[:,1] * np.ones((system.N, system.N))
+    Z = system.pos[:,2] * np.ones((system.N, system.N))
 
     # Compute "absolute" distance between particles (no PBC and MIC)
     r_x = np.transpose(X) - X
@@ -68,13 +69,13 @@ def lennard_jones_numpy():
     r_z = np.transpose(Z) - Z
 
     # Compute shortest distance according to PBC and MIC (minimum image convention)
-    r_x = r_x - L * np.rint(np.divide(r_x, L))
-    r_y = r_y - L * np.rint(np.divide(r_y, L))
-    r_z = r_z - L * np.rint(np.divide(r_z, L))
+    r_x = r_x - system.L * np.rint(np.divide(r_x, system.L))
+    r_y = r_y - system.L * np.rint(np.divide(r_y, system.L))
+    r_z = r_z - system.L * np.rint(np.divide(r_z, system.L))
 
     # Compute reciprocal of r
     # //I matrix are added and then subtracted in order to avoid divide by zero
-    r_reciprocal = np.reciprocal(np.sqrt(r_x**2 + r_y**2 + r_z**2) + np.eye(N)) - np.eye(N)
+    r_reciprocal = np.reciprocal(np.sqrt(r_x**2 + r_y**2 + r_z**2) + np.eye(system.N)) - np.eye(system.N)
 
     # Exclude distances longer than the cutoff radius
     # by setting r to zero
@@ -105,7 +106,6 @@ def lennard_jones_numpy():
     potential = np.sum(np.triu(P))
 
     return force, potential
-"""
 
 
 # Routine for computing the potential shift due to the potential cutoff
