@@ -4,5 +4,5 @@ Simulations and Exercise Sheets for the course "Computational physics: material 
 The following are the proposed simulations/tutorials/exercise sheets (in chronological order):
 
 - Exercise Sheet 01: Solar system and planetary evolution
-- Exercise Sheet 02: Molecular Dynamics w/ Lennard-Jones potential
-
+- Exercise Sheet 02: (MD) Lennard-Jones fluid
+- Exercise Sheet 03: 
