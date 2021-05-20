@@ -43,15 +43,16 @@ def lennard_jones(force, pos, L, N):
             r_z = r_z - L * int(r_z/L)
             r = np.sqrt(r_x*r_x + r_y*r_y + r_z*r_z)
 
-            force[i,0] += 24*epsilon*(2*sigma**12*r_x/r**14 - sigma**6*r_x/r**8)
-            force[i,1] += 24*epsilon*(2*sigma**12*r_y/r**14 - sigma**6*r_y/r**8)
-            force[i,2] += 24*epsilon*(2*sigma**12*r_z/r**14 - sigma**6*r_z/r**8)
+            if(r<cutoff):
+                force[i,0] += 24*epsilon*(2*sigma**12*r_x/r**14 - sigma**6*r_x/r**8)
+                force[i,1] += 24*epsilon*(2*sigma**12*r_y/r**14 - sigma**6*r_y/r**8)
+                force[i,2] += 24*epsilon*(2*sigma**12*r_z/r**14 - sigma**6*r_z/r**8)
 
-            force[j,0] += -24*epsilon*(2*sigma**12*r_x/r**14 - sigma**6*r_x/r**8)
-            force[j,1] += -24*epsilon*(2*sigma**12*r_y/r**14 - sigma**6*r_y/r**8)
-            force[j,2] += -24*epsilon*(2*sigma**12*r_z/r**14 - sigma**6*r_z/r**8)
+                force[j,0] += -24*epsilon*(2*sigma**12*r_x/r**14 - sigma**6*r_x/r**8)
+                force[j,1] += -24*epsilon*(2*sigma**12*r_y/r**14 - sigma**6*r_y/r**8)
+                force[j,2] += -24*epsilon*(2*sigma**12*r_z/r**14 - sigma**6*r_z/r**8)
 
-            potential += 2*4*epsilon*(1/r**12 - 1/r**6) + potential_shift
+                potential += 2*4*epsilon*(1/r**12 - 1/r**6) + potential_shift
 
     return force, potential
 
