@@ -5,4 +5,5 @@ The following are the proposed simulations/tutorials/exercise sheets (in chronol
 
 - Exercise Sheet 01: Solar system and planetary evolution
 - Exercise Sheet 02: (MD) Lennard-Jones fluid
-- Exercise Sheet 03: 
+- Exercise Sheet 03: (MD) Lennard-Jones fluid with radial distribution function 
+- Exercise Sheet 04: (MD) Lennard-Jones fluid confined between two walls
