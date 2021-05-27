@@ -38,7 +38,6 @@ import integrator  # integration scheme routines
 if __name__ == '__main__':
     settings.init()
 
-    printing.print_ovito("initial.txt")
 
     ttime = time.perf_counter()
     ######## EQUILIBRATION RUN #######
@@ -56,73 +55,13 @@ if __name__ == '__main__':
         # integrator module)
 
         if(iter == 0):
-            rho_x = 0
-            rho_y = 0
-            rho_z = 0
+
             system.force, system.potential = force.lennard_jones(
                 np.zeros(system.pos.shape, dtype=np.float), system.pos, system.L)
-            system.force, system.potential, system.f_wall_dw, system.f_wall_up = force.lennard_jones_wall(
-                system.pos, system.L, system.force, system.potential, system.f_wall_dw, system.f_wall_up)
-            system.force = force.external_force(system.force, 1)
 
         integrator.velocity_verlet()
-        system.compute_energy
+        rdf = force.radial_distribution_function()
 
         iter += 1
 
-    ######## PRODUCTION RUN #######
-
-    iter = 0
-    while iter < settings.iter_prod:
-
-        if(iter % 200 == 0):
-            print("Production iteration: ", iter)
-
-        integrator.velocity_verlet()
-        system.compute_energy
-
-        # get density
-        rho_x += force.density(0, 100)
-        rho_y += force.density(1, 100)
-        rho_z += force.density(2, 200)
-
-        iter += 1
-
-    # average densities and pressure
-    rho_x = rho_x / settings.iter_prod
-    rho_y = rho_y / settings.iter_prod
-    rho_z = rho_z / settings.iter_prod
-
-    pressure_up = system.f_wall_up / \
-        (settings.iter_prod + settings.iter_equ) / (system.L[0] * system.L[1])
-    pressure_dw = system.f_wall_dw / \
-        (settings.iter_prod + settings.iter_equ) / (system.L[0] * system.L[1])
-    print(pressure_dw, pressure_up)
-
-    printing.print_ovito("production.txt")
-
-    # plot radial distribution function
-    with plt.style.context(['science']):
-        bins = np.linspace(0., system.L[2], num=200)
-        fig, ax = plt.subplots()
-        ax.plot(bins[1:], rho_z, label = r"$\rho(z)$")
-        # ax.autoscale(tight=True)
-        ax.set_xlabel(r'z $[\sigma]$')
-        ax.set_ylabel(r'$\rho(z)$')
-        ax.set_ylim([0,2.5])
-        ax.legend()
-        ax.set_title("Density profile (z axis)")
-        fig.savefig('./rhoz.pdf')
-
-    with plt.style.context(['science']):
-        binsx = np.linspace(0., system.L[0], num=100)
-        fig, ax = plt.subplots()
-        ax.plot(binsx[1:], rho_y, label = r"$\rho(y)$")
-        ax.plot(binsx[1:], rho_x, label = r"$\rho(x)$")
-        # ax.autoscale(tight=True)
-        ax.set_xlabel('x/y $[\sigma]$')
-        ax.set_ylabel(r'$\rho$')
-        #ax.set_ylim([0,])
-        ax.legend()
-        ax.set_title("Density Profile (x,y axis)")
-        fig.savefig('./rhoxy.pdf')
+    print(time.perf_counter() - ttime)
