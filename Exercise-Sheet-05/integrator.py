@@ -39,7 +39,7 @@ def position_update(pos, DT, vel, force, mass, L):
     """
     for dim in range(pos.shape[1]):
         for i in range(pos.shape[0]):
-            pos[i,dim] += DT*vel[i,dim] + 0.5*DT**2*force[i,dim]/mass
+            pos[i,dim] += + DT*vel[i,dim] + 0.5*DT**2*force[i,dim]/mass
             pos[i,dim] = np.mod(pos[i,dim], L[dim])
 
     return pos
@@ -63,7 +63,7 @@ def velocity_update(vel, DT, force, force_previous, mass):
     """
     for dim in range(vel.shape[1]):
         for i in range(vel.shape[0]):
-            vel[i,dim] += 0.5*DT*(force + force_previous)/mass
+            vel[i,dim] += vel[i,dim] + 0.5*DT*(force[i,dim] + force_previous[i,dim])/mass
 
     return vel
 
@@ -109,4 +109,4 @@ def velocity_verlet():
     system.vel = velocity_update(system.vel, settings.DT, system.force, force_previous, system.mass)
 
     """Compute kinetic energy"""
-    system.kinetic = compute_kinetic(system.vel, system.smass)
+    system.kinetic = compute_kinetic(system.vel, system.mass)

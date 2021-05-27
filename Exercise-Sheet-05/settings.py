@@ -38,12 +38,11 @@ def init():
     force.cutoff_wall = 2.5*force.sigma_wall
 
     # SYSTEM VARIABLES
-    system.n = [6,6,12] #number of particles per dimension
+    system.n = [6,6,6] #number of particles per dimension
     system.dim = 3 #dimension of the sytem (2 or 3 - dimensional)
     system.N = system.n[0]*system.n[1]*system.n[2]  #Number of particles
     system.rho = 0.5 #Number density
-    #system.L = n*np.power(1/system.rho, 1/system.dim) #Box dimensions (per edge)
-    system.L = get_box_dimensions()
+    system.L = routines.get_box_dimensions()
     system.alat = system.L[0]/system.n[0] #Lattice parameter
     #system.p = system.L/force.sigma
     system.T = 2. #target temperature (variable with cT "current temp also available")
@@ -51,23 +50,9 @@ def init():
     # SIMULATIONS VARIABLES
     global DT, iter_equ, iter_prod, rescaling_freq
     DT = 2E-4
-    iter_equ = 10000
-    iter_prod = 10000
+    iter_equ = 2000
+    iter_prod = 2000
     rescaling_freq = 10
-
-    # PRINTING VARIABLES
-
-    printing.eq_print = 20
-    printing.eq_energy_file = "LJMD_" + str(system.N) + "_equil_energy.txt"
-    printing.eq_temp_file = "LJMD_" + str(system.N) + "_equil_temperature.txt"
-    printing.eq_pos_file = "LJMD_" + str(system.N) + "_equil_positions.txt"
-    printing.eq_vel_file = "LJMD_" + str(system.N) + "_equil_velocity.txt"
-
-    printing.prod_print = 20
-    printing.prod_energy_file = "LJMD_" + str(system.N) + "_prod_energy.txt"
-    printing.prod_temp_file = "LJMD_" + str(system.N) + "_prod_temperature.txt"
-    printing.prod_pos_file = "LJMD_" + str(system.N) + "_prod_positions.txt"
-    printing.prod_vel_file = "LJMD_" + str(system.N) + "_prod_velocity.txt"
 
 
     # SYSTEM CONTAINERS (positions, velocities, ...)
@@ -83,18 +68,8 @@ def init():
     # These are some of the initial routines for initializing the system,
     # such as lattice positions, random velocities.
     # These routines may vary from simulation to simulation
-    system.lattice_position()
-    system.vel_random()
-    system.vel_shift()
-    system.vel_rescale(system.T)
+    routiness.lattice_position()
+    routines.vel_random()
+    routines.vel_shift()
+    routines.vel_rescale(system.T)
     force.LJ_potential_shift()
-
-def get_box_dimensions():
-
-    L = np.zeros(3)
-    l = np.cbrt(0.5*system.N/system.rho)
-    L[0] = l
-    L[1] = l
-    L[2] = 2*l
-
-    return L

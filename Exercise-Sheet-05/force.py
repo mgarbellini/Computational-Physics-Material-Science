@@ -155,108 +155,6 @@ def external_force(force, k, axis = 2):
 	return force
 
 
-def density_profile(axis, nbins = 100):
-	"""Computes the density profile of the particles over a given axis
-
-	Args:
-		axis -- specifies the axis along which to compute the density profile
-		n_bins -- (default = 100) number of sampling bins for the histogram
-
-	Returns:
-		hist[0] -- histogram values -> y of density profile
-		hist[1] -- histogram bins -> x of density profile
-	"""
-	bins = np.linspace(0., system.L[axis], num=nbins)
-	hist = np.histogram(system.pos[:,axis], bins=bins, density=True)
-	return hist[0], hist[1]
-
-@njit
-def rdf_distances(pos, L, distances):
-	"""Computes distances between all particles needed for the radial
-	distribution function calculations
-
-	Args:
-		pos -- np.array([N,3]) array of current positions
-		L -- dimension of enclosing box
-		distances -- np.zeros(N(N-1)) array for storing distances
-
-	Returns:
-		distances -- np.array(N(N-1)) containing distances squared
-
-	Notes:
-		-- the routine runs using Numba @njit decorator for faster run time
-	"""
-	d_index = 0
-	for i in range(pos.shape[0] - 1):
-		for j in range(i + 1, pos.shape[0]):
-			rx = mic(pos[i, 0],pos[j,0], L[0])
-			ry = mic(pos[i, 1],pos[j,1], L[1])
-			rz = mic(pos[i, 2],pos[j,2], L[2])
-			distances[d_index] = rx*rx + ry*ry + rz*rz
-			distances[d_index+1] = distances[d_index]
-
-	return distances
-
-@njit
-def rdf_normalize(rdf, bins, N, rho):
-	"""Computes radial distribution function normalization
-
-	Args:
-		rdf -- np.array(nbins) containing frequencies
-		bins -- np.array(nbins) containing bin values
-		N -- total number of particles
-		rho -- system number density
-
-	Returns:
-		rdf -- normalized rdf values
-
-	Notes:
-		-- the routine runs using Numba @njit decorator for faster run time
-	"""
-	for i in range(rdf.shape[0]):
-		shell_volume = 4*np.pi*((bins[i+1])**3-bins[i]**3)/3
-		rdf[i] = rdf[i]/(N*shell_volume*rho)
-
-	return rdf
-
-
-def radial_distribution_function(nbins=100):
-	"""Computes the radial distribution function of the system, among with
-	the coordination number and the isothermal compressibility
-
-	Args:
-		nbins -- (default = 100) number of sampling bins for the rdf histogram
-
-	Returns:
-		rdf -- np.array(nbins) with the radial distribution function values
-		rdf_bins -- np.array(nbins+1) of bins
-		n_c -- np.array(nbins) with the coordination number of the system
-		k_t -- value of the isothermal compressibility
-	"""
-
-	# Array of distances
-	dist = np.zeros(system.N*(system.N-1))
-	dist = rdf_distances(system.pos, system.L, dist)
-	dist = np.sqrt(dist)
-
-	max_dist = 0.5*L[0]
-	bins = np.linspace(0., max_dist, nbins)
-
-	# Radial Distribution Function
-	histogram = np.histogram(dist, bins=bins, density=False)
-	rdf = rdf_normalize(histogram[0], histogram[1], system.N, system.rho)
-	rdf_bins = histogram[1]
-
-
-	# Coordination Number
-	n_c = 4*np.pi*system.rho * np.cumsum(rdf*bins[1]*bins[1:]**2)
-
-	# Isothermal Compressibility
-	k_t = np.cumsum(4/(system.T) * np.pi * (rdf-1) * bins[1] * bins[1:]**2) + 1/(system.T  * system.rho)
-
-	return rdf, rdf_bins, n_c, k_t[-1]
-
-
 def LJ_potential_shift():
 	"""Computes the LJ potential shift
 
@@ -266,6 +164,5 @@ def LJ_potential_shift():
 	Notes:
 		-- this is done once at the beginning of each simulation
 	"""
-
-    global potential_shift
-    potential_shift = 4*epsilon*(np.power(sigma/cutoff, 12) - np.power(sigma/cutoff, 6))
+	global potential_shift
+	potential_shift = 4*epsilon*(np.power(sigma/cutoff, 12) - np.power(sigma/cutoff, 6))
