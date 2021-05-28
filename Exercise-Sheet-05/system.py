@@ -19,6 +19,7 @@ import itertools
 from numba import jit, njit, vectorize
 
 """System variables"""
+ensemble = None #type of ensemble ("microcanonical, NVT, NHT")
 dim = None #dimension of the system (2D or 3D)
 alat = None #Lattice parameter
 rho = None #Number density
@@ -52,11 +53,3 @@ logs = None #Lagrangian fictitous degree of freedom (log of s)
 xi = None
 G = None
 nose_hoover = None #Energy contribution of the NH thermostat
-g = None #Specific parameter -> to obtain NVT ensemble g = 3N+1
-
-
-
-
-
-def compute_energy():
-    system.energy = system.kinetic + system.potential

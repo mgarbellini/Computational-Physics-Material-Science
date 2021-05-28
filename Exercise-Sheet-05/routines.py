@@ -248,3 +248,64 @@ def get_box_dimensions():
     L[2] = l
 
     return L
+
+"""Energy routines: compute energies, compute temperatures"""
+def compute_energy():
+    """Computes the energy of the system
+
+    Notes:
+        -- the routines implements different energy computation
+        depending on the ensemble considered
+    """
+    if system.ensemble == 'micro':
+        system.energy = system.kinetic + system.potential
+
+    elif system.ensemble == 'NHT':
+        system.energy = system.kinetic + system.potential + system.nose_hoover
+
+    else:
+        print("Error: unspecified ensemble")
+
+def nose_hoover_energy():
+    """Computes the Nose Hoover energy contribution given by
+
+    E = xi*xi*Q/2 + 3NkbTlns
+    """
+    system.nose_hoover = 0.5*system.Q*system.xi**2 + 3*system.N*const.KB*system.T*system.s
+
+
+"""Nose-Hoover specific routines"""
+def compute_G():
+    """Computes the variable G
+    """
+    system.G = (2*system.kinetic - 3*system.N*const.KB*system.T)/system.Q
+
+def compute_Q():
+    """Computes the thermal mass
+    """
+    g = 3*system.N + 1
+    system.Q = g*const.KB*T*settings.DT*settings.DT
+
+
+"""Fluctuations routine: std deviation, variance"""
+def statistical(array):
+    """Computes mean, standard deviation, and variance
+
+    Args:
+        array -- np.array containing the desired quantity
+
+    Returns:
+        [mean,std,var] -- standard deviation, variance
+    """
+    mean = np.mean(array)
+    std = np.std(array)
+    var = np.var(array)
+
+    return [mean,std,var]
+
+"""Thermodynamical routines"""
+def specific_heat():
+    """Computes specific heat of the system
+    """
+
+    pot = 

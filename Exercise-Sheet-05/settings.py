@@ -19,17 +19,21 @@ import numpy as np
 from numba import jit, njit, vectorize
 import numba
 
+"""Simulation variables"""
 DT = None
 iter_equ = None
 iter_prod = None
 rescaling_freq = None
 
 
-
-# Routine for initializing all variables of the System
 def init():
+    """Initializes all system variables and runs necessary routines"""
 
-    # LJ POTENTIAL VARIABLES
+    """TYPE OF ENSEMBLE"""
+    system.ensemble = 'micro'
+
+
+    """LJ POTENTIAL VARIABLES"""
     force.epsilon = 1.
     force.sigma = 1.
     force.cutoff = 4 #in units of sigma
@@ -37,7 +41,8 @@ def init():
     force.sigma_wall = force.sigma/5
     force.cutoff_wall = 2.5*force.sigma_wall
 
-    # SYSTEM VARIABLES
+
+    """SYSTEM VARIABLES"""
     system.n = [6,6,6] #number of particles per dimension
     system.dim = 3 #dimension of the sytem (2 or 3 - dimensional)
     system.N = system.n[0]*system.n[1]*system.n[2]  #Number of particles
@@ -47,7 +52,8 @@ def init():
     #system.p = system.L/force.sigma
     system.T = 2. #target temperature (variable with cT "current temp also available")
 
-    # SIMULATIONS VARIABLES
+
+    """SIMULATION VARIABLES"""
     global DT, iter_equ, iter_prod, rescaling_freq
     DT = 2E-4
     iter_equ = 2000
@@ -55,20 +61,18 @@ def init():
     rescaling_freq = 10
 
 
-    # SYSTEM CONTAINERS (positions, velocities, ...)
+    """SYSTEM/PARTICLES VARIABLES"""
+    system.mass = 1 #the particles are assumed have the same mass
     system.pos = np.zeros((system.N, system.dim), dtype = np.float)
     system.vel = np.zeros((system.N, system.dim), dtype = np.float)
     system.force = np.zeros((system.N, system.dim), dtype = np.float)
     system.f_wall_dw = 0 #force on lower wall
     system.f_wall_up = 0 #force on upper wall
-    system.mass = 1 #the particles are assumed to be indentical (not in MQ terms)
     system.time = 0 #probably not very useful
 
-    # SYSTEM INIT ROUTINES
-    # These are some of the initial routines for initializing the system,
-    # such as lattice positions, random velocities.
-    # These routines may vary from simulation to simulation
-    routiness.lattice_position()
+
+    """SYSTEM INIT ROUTINES"""
+    routines.lattice_position()
     routines.vel_random()
     routines.vel_shift()
     routines.vel_rescale(system.T)
