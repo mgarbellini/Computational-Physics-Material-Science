@@ -11,7 +11,7 @@ integration schemes and force calculation. These include:
 - Radial distribution function
 - (Copy) Minimum Image Convention (necessary for some routines)
 
-Latest update: May 27th 2021
+Latest update: June 1st 2021
 """
 
 import numpy as np
@@ -275,10 +275,10 @@ def nose_hoover_energy():
 
 
 """Nose-Hoover specific routines"""
-def compute_G():
+def compute_G(kinetic=system.kinetic):
     """Computes the variable G
     """
-    system.G = (2*system.kinetic - 3*system.N*const.KB*system.T)/system.Q
+    system.G = (2*kinetic - 3*system.N*const.KB*system.T)/system.Q
 
 def compute_Q():
     """Computes the thermal mass
@@ -304,8 +304,25 @@ def statistical(array):
     return [mean,std,var]
 
 """Thermodynamical routines"""
-def specific_heat():
-    """Computes specific heat of the system
+def specific_heat(energy, potential):
+    """Computes specific heat of the system using two different methods:
+	(1) total energy variance and (2) potential energy variance
+
+	Args:
+		energy -- array containing total energy for multiple timesteps
+		potential -- array containing potential energy for multiple timesteps
+
+	Returns:
+		CV[0] -- specific heat computed with (1)
+		CV[1] -- specific heat computed with (2)
     """
 
-    pot = 
+    var_e = statistical(np.asarray(energy))[2]
+	var_u = statistical(np.asarray(potential))[2]
+
+	CV_e = var_e/const.KB/system.T**2
+	CV_u = (1/const.KB/system.T**2)*(var_u + 0.5*3*system.N*(system.T*const.KB)**2)
+
+	system.cv = [CV_e, CV_u]
+
+	return [CV_e, CV_u]

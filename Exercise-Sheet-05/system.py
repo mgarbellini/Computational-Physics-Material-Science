@@ -49,7 +49,7 @@ cv = None #Heat capacity
 
 """Nose-Hoover Thermostat specific variables"""
 Q = None #Termal mass
-logs = None #Lagrangian fictitous degree of freedom (log of s)
+lns = None #Lagrangian fictitous degree of freedom (log of s)
 xi = None
 G = None
 nose_hoover = None #Energy contribution of the NH thermostat
