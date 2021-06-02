@@ -117,20 +117,71 @@ def velocity_verlet():
 """NOSE-HOOVER INTEGRATION - HALF STEP VELOCITY VERLET"""
 
 @njit
-def nh_vel1():
+def nh_vel1(v, f, xi, m, dt):
+    """Computes the half step velocity using the nose-hoover velocity verlet
+
+    Args:
+        v -- np.array(N,dim) containing current particles velocities
+        f -- np.array(N,dim) containing current particles net forces
+        xi -- current value of xi
+        m -- particle mass
+        dt -- timestep
+
+    Returns:
+        v -- np.array(N,dim) containing updated velocities (half step)
+
+    Notes:
+        -- the routine runs using Numba @njit decorator for faster run time
+    """
+    for dim in range(v.shape[1]):
+        for i in range(v.shape[0]):
+            v[i,dim] = (v[i,dim] + f[i,dim]*dt/m/2)/(1+xi*dt/2)
+
+    return v
 
 @njit
-def nh_pos():
+def nh_pos(v, p, dt):
+    """Updates position using the Nose-Hoover half step velocity verlet
+
+    Args:
+        v -- np.array(N,dim) containing current particles velocities
+        p -- np.array(N,dim) containing current particles positions
+        dt -- timestep
+
+    Returns:
+        p -- np.array(N,dim) containing updated positions
+
+    Notes:
+        -- the routine runs using Numba @njit decorator for faster run time
+    """
+    for dim in range(p.shape[1]):
+        for i in range(p.shape[0]):
+            p[i,dim] += v[i,dim]*dt
+
+    return p
 
 @njit
-def nh_lns():
+def nh_vel2(v,f, m, xi, dt):
+    """Computes the full step velocity using the nose-hoover velocity verlet
 
-@njit
-def nh_xi():
+    Args:
+        v -- np.array(N,dim) containing current particles velocities
+        f -- np.array(N,dim) containing current particles net forces
+        xi -- current value of xi
+        m -- particle mass
+        dt -- timestep
 
-@njit
-def nh_vel2():
+    Returns:
+        v -- np.array(N,dim) containing updated velocities (full step)
 
+    Notes:
+        -- the routine runs using Numba @njit decorator for faster run time
+    """
+    for dim in range(v.shape[1]):
+        for i in range(v.shape[0]):
+            v[i,dim] = v[i,dim] + 0.5*dt*(f[i,dim]/m - xi*v[i,dim])
+
+    return v
 
 def nose_hoover_integrate():
     """Updates the Nose-Hoover Thermostat using an half-step velocity verlet
@@ -145,9 +196,9 @@ def nose_hoover_integrate():
 
     G_half = routines.compute_G(kinetic_half)
 
-    system.lns = nh_lns(system.lns, system.xi, G_half, settings.DT)
+    system.lns += system.xi*settings.DT + G_half*settings.DT*2/2
 
-    system.xi = nh_xi(system.xi, G_half, settings.DT)
+    system.xi += G_half*settings.DT
 
     system.force, system.potential = force.lennard_jones(np.zeros(system.pos.shape, dtype = np.float), system.pos, system.L)
 
