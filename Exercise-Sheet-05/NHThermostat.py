@@ -33,35 +33,31 @@ import force  # force routines
 import settings  # simulation input values and initialization
 import printing  # various printing and plotting routines
 import integrator  # integration scheme routines
+import routines
 
 
 if __name__ == '__main__':
     settings.init()
-
-
-    ttime = time.perf_counter()
+    #ttime = time.perf_counter()
     ######## EQUILIBRATION RUN #######
     iter = 0
-    while iter < settings.iter_equ:
+    while iter < 10:
 
-        if(iter % 200 == 0):
+        if(iter % 1 == 0):
             print("Equilibration iteration: ", iter)
 
         # Rescale velocity
         if(iter % settings.rescaling_freq == 0):
-            system.vel_rescale(2)
+            routines.vel_rescale()
 
         # Integrate system (if iter = 0 the force needs to be computed
         # integrator module)
 
         if(iter == 0):
+            system.force, system.potential = force.lennard_jones(np.zeros(system.force.shape, dtype=np.float), system.pos, system.L)
 
-            system.force, system.potential = force.lennard_jones(
-                np.zeros(system.pos.shape, dtype=np.float), system.pos, system.L)
-
-        integrator.velocity_verlet()
-        rdf = force.radial_distribution_function()
+        integrator.nose_hoover_integrate()
 
         iter += 1
 
-    print(time.perf_counter() - ttime)
+    #print(time.perf_counter() - ttime)

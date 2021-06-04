@@ -17,6 +17,7 @@ import numpy as np
 import system
 import settings
 import force
+import routines
 from numba import jit, njit, vectorize
 
 """GENERAL VELOCITY RELATED ROUTINES"""
@@ -89,7 +90,6 @@ def vv_vel(vel, DT, force, force_previous, mass):
 
     return vel
 
-
 def velocity_verlet():
     """Updates the positions and velocities according to the velocity-verlet
     integration scheme
@@ -135,8 +135,7 @@ def nh_vel1(v, f, xi, m, dt):
     """
     for dim in range(v.shape[1]):
         for i in range(v.shape[0]):
-            v[i,dim] = (v[i,dim] + f[i,dim]*dt/m/2)/(1+xi*dt/2)
-
+            v[i,dim] = (v[i,dim] + 0.5*f[i,dim]*dt/m)/(1+xi*dt/2)
     return v
 
 @njit
@@ -205,3 +204,5 @@ def nose_hoover_integrate():
     system.vel = nh_vel2(vel_half, system.force, system.mass, system.xi, settings.DT)
 
     system.kinetic = compute_kinetic(system.vel, system.mass)
+
+    print(G_half, kinetic_half, system.lns, system.xi, system.kinetic)

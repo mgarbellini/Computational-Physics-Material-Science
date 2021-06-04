@@ -11,12 +11,6 @@ Latest update: May 27th 2021
 """
 
 import numpy as np
-import settings
-import const
-import force
-import integrator
-import itertools
-from numba import jit, njit, vectorize
 
 """System variables"""
 ensemble = None #type of ensemble ("microcanonical, NVT, NHT")

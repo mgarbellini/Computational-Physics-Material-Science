@@ -68,20 +68,19 @@ def lennard_jones(force, pos, L):
 		-- the routine runs using Numba @njit decorator for faster run time
 	"""
 	potential = 0
-	rij = []
-	r = 0
 
 	for i in range(pos.shape[0] - 1):
 		for j in range(i + 1, pos.shape[0]):
+			r = 0
+			rij = []
 			for dim in range(pos.shape[1]):
-				dist = mic(pos[i, dim], pos[j, dim], L[dim])
+				dist = mic(pos[i,dim], pos[j,dim], L[dim])
 				rij.append(dist)
 				r += dist * dist
 
 			if(r < cutoff**2):
 				for dim in range(pos.shape[1]):
-					f = 48 * epsilon * \
-					    (sigma**12 * rij[dim] / r**7 - 0.5 * sigma**6 * rij[dim] / r**4)
+					f = 48 * epsilon * (sigma**12 * rij[dim] / r**7 - 0.5 * sigma**6 * rij[dim] / r**4)
 					force[i, dim] += f
 					force[j, dim] -= f
 
