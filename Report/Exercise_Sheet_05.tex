@@ -1,0 +1,163 @@
+\documentclass[aps,pra,reprint, onecolumn, rmp]{revtex4-2}
+\usepackage{lipsum}
+\usepackage{listings}
+
+\usepackage{etoolbox}
+\patchcmd{\section}
+  {\centering}
+  {\raggedright}
+  {}
+  {}
+\patchcmd{\subsection}
+  {\centering}
+  {\raggedright}
+  {}
+  {}
+
+
+\usepackage{xcolor}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{pystyle}{
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2
+}
+%\lstset{style=pystyle}
+\lstset{language=Python}
+\lstset{frame=lines}
+\lstset{caption={Insert code directly in your document}}
+\lstset{label={lst:code_direct}}
+\lstset{basicstyle=\footnotesize}
+
+
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage{adjustbox}
+\usepackage{tabularx}
+\newcommand\setrow[1]{\gdef\rowmac{#1}#1\ignorespaces}
+\newcommand\clearrow{\global\let\rowmac\relax}
+\clearrow
+
+\usepackage{amsmath}
+
+\begin{document}
+
+%Title of paper
+\title{COMPUTATIONAL PHYSICS - EXERCISE SHEET 05 \\Nose-Hoover Thermostat}
+
+\author{Matteo Garbellini}
+\email[]{matteo.garbellini@studenti.unimi.it}
+\homepage[]{https://github.com/mgarbellini/Computational-Physics-Material-Science}
+\affiliation{Department of Physics, University of Freiburg \\ }
+
+
+\date{\today}
+
+\begin{abstract}
+The following is the report for the Exercise Sheet 05. The goal of this exercise is to simulate a Lennard-Jones fluid using the Nose-Hoover NVT thermostat, and to study significant thermostatistical quantities. Along this report, python scripts were also handed in. Additional code can be found at the github repository given at the end of this page. \textbf{As of today the code does not work properly, and shows unrealistic-unphysical results.}
+\end{abstract}
+
+
+%\maketitle must follow title, authors, abstract, and keywords
+\maketitle
+
+
+
+% % % % % % % % %
+% MAIN REPORT   %
+% % % % % % % % %
+\section{Code implementation}
+The new code implements the Nose-Hoover thermostat, which include a Velocity-Verlet type of integrator for position, velocities and the additional thermostat quantities. Moreover a routine for computing the specific heat was implemented, together with a statistical routine for calculating the running average of a given quantity.\\
+
+Additionally a new routine for generating random velocities directly distributed over a Maxwell-Boltzmann distribution was implemented. Although not necessary, some rescaling iterations are still perfomed. 
+
+% % % % % % % % %
+% SECTION 1 %
+% % % % % % % % %
+
+\section{Problems with the code implementation}
+Beginning from last week when running the code I noticed some inconsistent results, in particular related to the difference in magnitude between kinetic energy and potential energy. The resulting values of the specific heat using $\sigma_E^2$ and $\sigma_U^2$ were different by many order of magnidute. Indeed, by outputting the variance results, I discovered that the variance would increase over time, with peaks of $\sigma_E^2\approx 10^6$.
+
+\subsection{Issues}
+In order to compare the results with some of the fellow students I decided to switch back to real units -- considering that so far I had been using reduced units for convenience. This made the comparison much easier and gave an intuition of the possible errors. After some time of debugging I found the following major issues:
+\begin{itemize}
+  \item The temperature after the first step would increase to incredibly high values $>10^{44}$ in very little time
+  \item The energy was off and the kinetic energy, after the first few iterations would remain constants, which was not a physical result.
+  \item The velocity rescaling at the first step had some issues, resulting in a kinetic energy of $\approx 10^{-19}$ before and $\approx 10^{23}$ after the rescaling. 
+  \item Unrealistic specific heat values $C_v \approx 10^{200}$ (even after some fixes, see plot)
+\end{itemize}
+
+\subsection{Fixes}
+So far I believe I have been able to fix some of the major issues, in particular I found the following bugs:
+\begin{itemize}
+  \item The velocity update would add twice the new velocity at each time step, fault of a wrong +=
+  \item Somehow the velocity rescaling would compute the temperature in the wrong way, leading to inconsistent results
+\end{itemize}
+
+\subsection{Unresolved yet}
+The following are some of the unresolved issues so far:
+\begin{itemize}
+  \item Specific heat shows unphysical results 
+  \item Running average used with specific heat shows some error of the type \textit{RuntimeWarning: overflow in true-divide}
+  \item Outputting $\xi(t)$ the order of magnitude does not seem correct
+\end{itemize}
+
+
+\subsection{Comments}
+By outputting the temperatures at each timestep it seems that the new implementation now produces physical meaningful results. This however took me almost a week of debugging, therefore I was not able to finish the simulations necessary for this exercise sheet. In the next section I will provide some preliminary results. Even though the temperature shows realistic results, the specific heat still does not show correct results. \textbf{Overall the code does not work properly yet.}\\
+
+Additionally, it is to be noted that the issues rose from a clean-up and rewrite of some part of the code. Therefore I think that the results obtained in previous exercise sheets should be correct, although some minor inconsistency could also be explained -- in particular some of the major fluctuations found in the density profiles. 
+
+
+
+% % % % % % % % %
+% SECTION 2   %
+% % % % % % % % %
+\section{Some preliminary results}
+The following are some preliminary results showing that some of the code fixes were successfull.
+
+\subsection{Temperature}
+The temperature seems to be correct. The figure shows a simulation run with $N=6^3$, with 2000 equilibration iterations at T=300k, 2000 and 2000 production iterations for T=300K and T=100K, respectively. 
+\begin{figure}[h]
+          \centering
+          \includegraphics[width=90mm]{./plots/T}
+          \caption{The figure shows the temperature over time}
+\end{figure}
+
+\subsection{Specific Heat}
+The specific heat still shows some unrealistic results. Additional debugging is needed. As can be seen from the figure, the specific heat computed with $\sigma_E^2$ does not even show in the range of the one with $\sigma_U^2$. 
+\begin{figure}[h]
+          \centering
+          \includegraphics[width=90mm]{./plots/cv}
+          \caption{The figure shows the specific heat over time}
+\end{figure}
+
+
+
+\subsection{Plot of $\xi(t)$}
+The results for $\xi(t)$ seem quite unrealist as well, given the enormous fluctuations.
+\begin{figure}[h]
+          \centering
+          \includegraphics[width=80mm]{./plots/xi}
+          \caption{The figure shows the value of $\xi(t)$ over time}
+\end{figure}
+
+
+\end{document}
