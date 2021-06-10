@@ -25,101 +25,42 @@ from mpl_toolkits.mplot3d import Axes3D
 # # # # # PLOTTING  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
+def plot(x, y, legend, xlabel, ylabel, title, filename):
+    """Plots the given input data (can be multidimensional)
 
-# Routine for plotting the inital lattice positions
-# //works for any position
-def plot_system(filename, iter):
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(system.pos[:,0], system.pos[:,1], system.pos[:,2], s = 40)
-    ax.set_xlim([0,system.L])
-    ax.set_ylim([0,system.L])
-    ax.set_zlim([0,system.L])
-    fig.savefig('./pdf/' + filename + '_' + str(iter) + '.pdf')
+    Args:
+        x -- x values
+        y -- y values
+        legend -- legend text description
+        xlabel -- x axis label
+        ylabel -- y axis label
+        title -- plot title
+        filename -- output filename
 
-def plot_energy(kind, run):
-    type = ["Kinetic", "Potential", "Total"]
-    typeof = ["equil", "prod"]
-    type_small = ["K", "P", "E"]
-    filename = "./LJMD_" + str(system.N) + "_" + typeof[run] +"_energy.txt"
-    E = np.loadtxt(filename, usecols = kind)
-    x = np.arange(len(E))*20
-    mean_E = np.mean(E)
+    """
+    if not isinstance(y, np.ndarray):
+        y = np.asarray(y)
 
-    with plt.style.context(['science']):
-        fig, ax = plt.subplots()
-        ax.plot(x,E, label= type[kind] + " Energy")
-        ax.hlines(mean_E, 0, len(x)*20 , color ="red", label = "Mean Energy")
-        #ax.autoscale(tight=True)
-        ax.set_xlabel('timesteps')
-        ax.set_ylabel(type_small[kind] + ' [reduced units]')
+    if x == None:
+        x = np.linspace(1, y.shape[0], num=y.shape[0], endpoint=True)
+    elif not isinstance(x, np.ndarray):
+        x = np.asarray(arrray)
 
-        #ax.set_ylim([155.4, 155.6])
-        ax.legend()
-        ax.set_title(type[kind] + " energy during " + typeof[run])
-        fig.savefig('./figures/'+ str(system.N)+'_'+ typeof[run] + '_' + type[kind] + '_Energy.pdf')
-
-def plot_velocity(run):
-    xcols = []
-    ycols = []
-    zcols = []
-    typeof = ["equil", "prod"]
-
-    iter = 0
-    while iter<system.N*3:
-        xcols.append(iter)
-        ycols.append(iter+1)
-        zcols.append(iter+2)
-        iter+=3
-
-    velx = np.loadtxt("./LJMD_" + str(system.N) + "_"+ typeof[run]+ "_velocity.txt", usecols = xcols)
-    vely = np.loadtxt("./LJMD_" + str(system.N) + "_"+ typeof[run]+ "_velocity.txt", usecols = ycols)
-    velz = np.loadtxt("./LJMD_" + str(system.N) + "_"+ typeof[run]+ "_velocity.txt", usecols = zcols)
-
-    sum_x = np.sum(velx*velx, axis = 1)
-    sum_y = np.sum(vely*vely, axis = 1)
-    sum_z = np.sum(velz*velz, axis = 1)
-
-    x = np.arange(len(sum_x))*20
 
     with plt.style.context(['science']):
-        fig, ax = plt.subplots()
-        ax.plot(x,sum_x, label="$\sum_{i}^N v_{i,x}^2$")
-        ax.plot(x,sum_y, label="$\sum_{i}^N v_{i,y}^2$")
-        ax.plot(x,sum_z, label="$\sum_{i}^N v_{i,z}^2$")
 
-        #ax.autoscale(tight=True)
-        ax.set_xlabel('timesteps')
-        ax.set_ylabel('$\sum v^2 $ [reduced units]')
-        ax.legend()
-        ax.set_title("Sum of squared velocities")
-        fig.savefig('./figures/' + str(system.N)+ '_'+ typeof[run]+'_velocities.pdf')
-
-def plot_rdf(histogram, bins):
-    #plot radial distribution function
-    with plt.style.context(['science']):
         fig, ax = plt.subplots()
-        ax.plot(bins,histogram, label="$g(r)$")
-        #ax.autoscale(tight=True)
-        ax.set_xlabel('r $[\sigma]$')
-        ax.set_ylabel('$g(r)$')
-        ax.set_xlim([0,0.5*system.L])
-        ax.legend()
-        ax.set_title("Radial Distribution Function")
-        fig.savefig('./figures/rdf.pdf')
+        for i in range(y.ndim):
+            if y.ndim == 1:
+                ax.plot(x,y,label = legend)
+            else:
+                ax.plot(x, y[:,i], label = legend[i])
 
-def plot_coord(histogram, bins):
-    #plot radial distribution function
-    with plt.style.context(['science']):
-        fig, ax = plt.subplots()
-        ax.plot(bins,histogram, label="$n_c(r)$")
-        #ax.autoscale(tight=True)
-        ax.set_xlabel('r $[\sigma]$')
-        ax.set_ylabel('$n_c(r)$')
-        ax.set_xlim([0,np.max(bins)])
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
         ax.legend()
-        ax.set_title("Running coordination number")
-        fig.savefig('./figures/coord.pdf')
+        ax.set_title(title)
+        fig.savefig('./' + filename +'.pdf')
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -131,13 +72,14 @@ def print_ovito(filename):
     ovito.write("ITEM: TIMESTEP \n")
     ovito.write("%i \n" % 0)
     ovito.write("ITEM: NUMBER OF ATOMS \n")
-    ovito.write( "%i \n" % system.N)
+    ovito.write("%i \n" % system.N)
     ovito.write("ITEM: BOX BOUNDS pp pp pp \n")
     ovito.write("%e %e \n" % (system.L[0], system.L[0]))
     ovito.write("%e %e \n" % (system.L[1], system.L[1]))
     ovito.write("%e %e \n" % (system.L[2], system.L[2]))
     ovito.write("ITEM: ATOMS id x y z \n")
     for i in range(0, system.N):
-        ovito.write("%i %e %e %e \n" % (i, system.pos[i,0],system.pos[i,1], system.pos[i,2]))
+        ovito.write("%i %e %e %e \n" %
+                    (i, system.pos[i, 0], system.pos[i, 1], system.pos[i, 2]))
 
     ovito.close()

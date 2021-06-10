@@ -11,15 +11,17 @@ integration schemes and force calculation. These include:
 - Radial distribution function
 - (Copy) Minimum Image Convention (necessary for some routines)
 
-Latest update: June 1st 2021
+Latest update: June 6th 2021
 """
 
 import numpy as np
 from numba import jit, njit, vectorize
 import system
+import integrator
 import settings
 import const
 import itertools
+import matplotlib.pyplot as plt
 
 """Minimum image convention"""
 @njit
@@ -147,7 +149,8 @@ def density_profile(axis, nbins = 100):
     return hist[0], hist[1]
 
 """Velocity routines: random, shift, rescale"""
-def vel_random(type = 'uniform'):
+
+def velocity_random(type = 'uniform'):
     """Randomly generates velocities in the range (-1,1)
 
     Args:
@@ -155,53 +158,48 @@ def vel_random(type = 'uniform'):
     """
     if(type == 'uniform'):
         system.vel = np.random.uniform(-1.0, 1.0, (system.N,system.dim))
+        #Velocities are shifted to avoid unwanted momenta
+        for dim in range(system.vel.shape[1]):
+            system.vel[:,dim] -= np.mean(system.vel[:,dim])
+
     elif(type == 'boltzmann'):
-        print("yet to be implemented")
+        sigma = system.T*const.KB/system.mass
+        system.vel = np.sqrt(sigma)*np.random.normal(0, 1, size=(system.N, system.dim))
 
 @njit
-def velocity_shift(vel):
-    """Shifts the velocities to cancel any unwanted linear momentum
+def v_res(v, Td, kb, mass):
+    """Rescale velocities using numba
 
     Args:
-        vel -- np.array(N,dim) containing current velocities
+        v -- np.array(N,dim) containing velocities
+        Td -- desired temperature
+        kb -- Boltzmann constant
+        mass -- particles' mass
 
     Returns:
-        vel -- array with shifted velocities
-
-    Notes:
-        -- the routine runs using Numba @njit decorator for faster run time
+        v -- rescaled velocities
     """
+    vel_sq = 0
+    for axis in range(v.shape[1]):
+        for i in range(v.shape[0]):
+            vel_sq += v[i,axis]**2
 
-    for dim in range(vel.shape[1]):
-        mean = 0
-        for i in range(vel.shape[0]):
-            mean += vel[i,dim]
-        mean = mean/vel.shape[0]
-        for i in range(vel.shape[0]):
-            vel[i,dim] -= mean
+    Tc = mass*vel_sq/3./kb/v.shape[0]
+    factor = np.sqrt(Td/Tc)
 
-    return vel
+    for axis in range(v.shape[1]):
+        for i in range(v.shape[0]):
+            v[i,axis] *= factor
 
-def vel_shift():
-    """Shifts the velocities to cancel any unwanted linear momentum
+    return v
+
+def velocity_rescale():
+    """Calls Numba for rescaling the velocities
     """
-    mean = np.sum(system.vel, axis = 0)/system.N
-    system.vel[:,0] -= mean[0]
-    system.vel[:,1] -= mean[1]
-    if (system.dim == 3):
-        system.vel[:,2] -= mean[2]
-
-def vel_rescale():
-    """Rescales the particle velocities to a target temperature
-
-    Args:
-        temp -- value of temperature at which the velocities are rescaled
-    """
-    v_ave = np.sum(np.multiply(system.vel, system.vel))/system.N
-    system.vel *= np.sqrt(3*system.T*const.KB/v_ave)
+    system.vel = v_res(system.vel, system.T, const.KB, system.mass)
 
 """Position routines: distribute lattice, get box dimensions"""
-def lattice_position(type = 'cubic'):
+def position_lattice(type = 'cubic'):
     """Distributes position over a lattice given the type
 
     Args:
@@ -239,7 +237,7 @@ def lattice_position(type = 'cubic'):
 def get_box_dimensions():
 
     L = np.zeros(3)
-    l = np.cbrt(0.5*system.N/system.rho)
+    l = np.cbrt(system.N/system.rho)
     L[0] = l
     L[1] = l
     L[2] = l
@@ -247,37 +245,24 @@ def get_box_dimensions():
     return L
 
 """Energy routines: compute energies, compute temperatures"""
-def compute_energy():
-    """Computes the energy of the system
 
-    Notes:
-        -- the routines implements different energy computation
-        depending on the ensemble considered
-    """
-    if system.ensemble == 'micro':
-        system.energy = system.kinetic + system.potential
-
-    elif system.ensemble == 'NHT':
-        system.energy = system.kinetic + system.potential + system.nose_hoover
-
-    else:
-        print("Error: unspecified ensemble")
-
-def nose_hoover_energy():
+@njit
+def nose_hoover_energy(Q, xi, N, kb, T, lns):
     """Computes the Nose Hoover energy contribution given by
 
     E = xi*xi*Q/2 + 3NkbTlns
     """
-    system.nose_hoover = 0.5*system.Q*system.xi**2 + 3*system.N*const.KB*system.T*system.s
+    energy = 0.5*Q*xi**2 + 3*N*kb*T*lns
+    return energy
 
 
 """Nose-Hoover specific routines"""
-def compute_G(kinetic):
+@njit
+def compute_G(kinetic, N, kb, T, Q):
     """Computes the variable G
     """
-    system.G = (2*kinetic - 3*system.N*const.KB*system.T)/system.Q
-
-    return system.G
+    G = (2*kinetic - 3*N*kb*T)/Q
+    return G
 
 def compute_Q():
     """Computes the thermal mass (once per simulation)
@@ -296,6 +281,9 @@ def statistical(array):
     Returns:
         [mean,std,var] -- standard deviation, variance
     """
+    if not isinstance(array, np.ndarray):
+        array = np.asarray(array)
+
     mean = np.mean(array)
     std = np.std(array)
     var = np.var(array)
@@ -315,18 +303,21 @@ def running_average(array, dt):
     if not isinstance(array, np.ndarray):
         array = np.asarray(array)
 
-    r_ave = np.sum(array*dt)/(array.shape[0]*dt)
+    r_ave = np.cumsum(array*dt)
+    for j in range(len(r_ave)):
+        r_ave = r_ave/(dt*(j+1))
     return r_ave
 
 """Thermodynamical routines"""
-def specific_heat(energy, potential, T=system.T):
+def specific_heat(energy, potential, temperature):
     """Computes specific heat of the system using two different methods:
-    (1) total energy variance and (2) potential energy variance
+    (1) total energy variance and (2) potential energy variance. The temperature is given by
+    the mean of all values up to current time.
 
     Args:
-        energy -- array containing total energy for multiple timesteps
-        potential -- array containing potential energy for multiple timesteps
-        temperature -- (default is desired temperature)
+        energy -- list containing total energy for multiple timesteps
+        potential -- list containing potential energy for multiple timesteps
+        temperature -- list containing computed temperature for multiple timesteps
 
     Returns:
         CV[0] -- specific heat computed with (1)
@@ -335,10 +326,20 @@ def specific_heat(energy, potential, T=system.T):
 
     var_e = statistical(np.asarray(energy))[2]
     var_u = statistical(np.asarray(potential))[2]
+    mean_t = statistical(np.asarray(temperature))[0]
 
-    CV_e = var_e/const.KB/T**2
-    CV_u = (1/const.KB/T**2)*(var_u + 0.5*3*system.N*(T*const.KB)**2)
+    CV_e = var_e/const.KB/mean_t**2
+    CV_u = (1/const.KB/mean_t**2)*(var_u + 0.5*3*system.N*(mean_t*const.KB)**2)
 
     system.cv = [CV_e, CV_u]
 
     return [CV_e, CV_u]
+
+@njit
+def temp(kinetic, KB, N):
+    return 2*kinetic/3./KB/N
+
+def current_temp():
+    """Computes current temperature using the kinetic energy relation
+    """
+    return temp(system.kinetic, const.KB, system.N)
