@@ -1,0 +1,233 @@
+\documentclass[aps,pra,reprint, onecolumn, rmp]{revtex4-2}
+\usepackage{lipsum}
+\usepackage{listings}
+
+\usepackage{etoolbox}
+\patchcmd{\section}
+  {\centering}
+  {\raggedright}
+  {}
+  {}
+\patchcmd{\subsection}
+  {\centering}
+  {\raggedright}
+  {}
+  {}
+
+
+\usepackage{xcolor}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{pystyle}{
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2
+}
+%\lstset{style=pystyle}
+\lstset{language=Python}
+\lstset{frame=lines}
+\lstset{caption={Insert code directly in your document}}
+\lstset{label={lst:code_direct}}
+\lstset{basicstyle=\footnotesize}
+
+
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage{adjustbox}
+\usepackage[upgreek]{mathastext}
+\usepackage{tabularx}
+\newcommand\setrow[1]{\gdef\rowmac{#1}#1\ignorespaces}
+\newcommand\clearrow{\global\let\rowmac\relax}
+\clearrow
+
+\usepackage{amsmath}
+
+\begin{document}
+
+%Title of paper
+\title{COMPUTATIONAL PHYSICS - EXERCISE SHEET 06 \\Pressure and Internal Virial}
+
+\author{Matteo Garbellini}
+\email[]{matteo.garbellini@studenti.unimi.it}
+\homepage[]{https://github.com/mgarbellini/Computational-Physics-Material-Science}
+\affiliation{Department of Physics, University of Freiburg \\ }
+
+
+\date{\today}
+
+\begin{abstract}
+The following is the report for the Exercise Sheet 06. The goal of this exercise is to simulate a Lennard-Jones fluid using the Nose-Hoover NVT thermostat, and to implement a routine that evaluates the pressure P of the system, using the internal virial. Along this report, python scripts were also handed in. Additional code can be found at the github repository given at the end of this page.
+\end{abstract}
+
+
+%\maketitle must follow title, authors, abstract, and keywords
+\maketitle
+
+
+
+% % % % % % % % %
+% MAIN REPORT   %
+% % % % % % % % %
+\section{Code implementation}
+The new code enriches the the Nose-Hoover thermostat with a routine that computes the system pressure P using the internal virial $\theta$ as follows
+\begin{equation}
+	P = \frac{1}{3V}(2K + \theta)
+\end{equation}
+where $V$ is the box volume, $K$ the kinetic energy. \\
+The internal virial is computed using the distance between atoms and the respective forces:
+\begin{equation}
+	\theta = \sum_{i=1}^N\sum_{j>i}\sum_{\alpha\in\{x,y,z\}}r_{\alpha,ij}f_{\alpha,ij}
+\end{equation}
+
+
+In the simulations, routines from previous implementation where also used, including for calculating the specific heat, radial distribution function and the isothermal compressibility.
+
+% % % % % % % % %
+% SECTION 1 %
+% % % % % % % % %
+
+\section{Simulation parameters and procedures}
+The following simulations consist in a system with $N=8^3$ particles, integrated for a total of 50000 iterations, of which the first 5000 is the equilibration run at temperature $T=300K$. The main quantities of interest were sampled every 50 steps, and include:
+\begin{itemize}
+	\item Pressure $P$
+	\item Temperature $T$
+	\item Radial distribution function $g(r)$
+	\item Specific heat $Cv$ calculated with both $\sigma_E^2$ and $\sigma_U^2$
+	\item Isothermal Compressibility $k_T$
+\end{itemize}
+After the simulations, the \textit{block average} was performed, that is the data was divided into 9 blocks and averaged over the blocks. The goal of this procedure is to produce uncorrelated data from the original complete date; this allows to compute the correct statistical error 
+\begin{equation}
+	\mbox{error} = \frac{\sigma_b}{\sqrt{N_b}} 
+\end{equation}
+
+where $\sigma_b$  is the standard deviation of the reduced data (block data) and $N_b$ the number of blocks.
+
+
+% % % % % % % % %
+% SECTION 2   %
+% % % % % % % % %
+\section{SIMULATION RESULTS (A)}
+The following are the results of the performed simulation with $\rho = 0.5\sigma^{-3}$.
+
+
+\subsection{Radial distribution function}
+ 
+\begin{figure}[h]
+          \centering
+          \includegraphics[width=70mm]{./plots06/05/RDF}
+          \caption{The figure shows the radial distribution function}
+\end{figure}
+
+\subsection{Temperature and Pressure}
+The following plots show the evolution of the temperature and pressure over time. The temperature values fluctuate around a mean value of  $T\approx300K$. The pressure on the other hand shows a decreasing trend over time. Further insights can be seen from the block average given on the right.
+
+\begin{figure}[h]
+     \centering
+     \subfloat{\includegraphics[width=55mm]{./plots06/05/T_data_05.txt.pdf}}
+     \subfloat{\includegraphics[width=55mm]{./plots06/05/P_data_05.txt.pdf}}
+     \subfloat{\includegraphics[width=55mm]{./plots06/05/Pressure_5}}
+     \caption{The figures show the evolution over time of the temperature (left), the pressure (center) and the pressure block average (right).}
+    
+\end{figure}
+
+
+\subsection{Specific Heat}
+The specific heat shows inconsistents results, that is the computed values with the two different methods differ quite a lot. I assume this is a code problem, since the evolution seems identical. Indeed the two seem shifted by a given amount. 
+\begin{figure}[h]
+     \centering
+     \subfloat{\includegraphics[width=55mm]{./plots06/05/SpecifiHeatE_5}}
+     \subfloat{\includegraphics[width=55mm]{./plots06/05/SpecifiHeatU_5}}
+     \caption{The figures show the specific heat $Cv$ computed with $\sigma_E^2$ (left) and $\sigma_U^2$ (right). Notice that the evolution is the same (in terms of \textit{trend}) but with an overall shift/multiplication factor, probably due to some error in the implementation.}
+    
+\end{figure}
+
+\subsection{Isothermal Compressibility}
+The following are the results for the isothermal compressibility. The results, given in SI units, appear to be incorrect. Indeed the values should be much smaller. As will be seen the next section the results still reflect the physics behind it, namely higher compressibility values -- albeit with possible wrong order of magnitude -- for less dense fluids.
+
+\begin{figure}[h]
+          \centering
+          \includegraphics[width=70mm]{./plots06/05/Compressibility_5}
+          \caption{The figure shows the isothermal compressibility over time}
+\end{figure}
+
+
+\section{SIMULATION RESULTS (B)}
+The following are the results obtained with the different values of number density: $\rho\in\{0.1, 0.05, 0.01, 0.005\}$ (units of $\sigma^{-3}$). Only the meaningful results were presented in order to not clutter the report with too many plots. The complete collection of plots can be found in the github repository.
+
+\subsection{Pressure}
+The following are the results for the block average pressure. Decreasing number densities also decreases the internal pressure. Indeed a less dense fluids will have weaker internal forces and as a results a smaller internal virial.
+
+\begin{figure}[h]
+    \centering
+    \subfloat{\includegraphics[width=55mm]{./plots06/01/Pressure_1}}
+    \subfloat{\includegraphics[width=55mm]{./plots06/005/Pressure_05}}
+    
+\end{figure}
+
+\begin{figure}[h]
+     \centering
+     \subfloat{\includegraphics[width=55mm]{./plots06/001/Pressure_01}}
+     \subfloat{\includegraphics[width=55mm]{./plots06/0005/Pressure_005}}
+     \caption{The figures show the block average pressure of a Lennard Jones fluid with different number densities: (in units of $\sigma^{-3}$) $\rho=0.1$ (top left), $\rho=0.05$ (top right), $\rho=0.01$ (bottom left), and $\rho=0.005$ (bottom right).}
+    
+\end{figure}
+
+\subsection{Isothermal Compressibility}
+As mentioned previusly the numerical values of the isothermal compressibility are wrong probably due to some forgotten factor in the code. Nevertheless the following plots show the physical intuition about the relationships between the compressibility and the density (at least for initial part of the simulation). The response of a fluid to pressure will depend on the density of such fluid, leading to greater compressibility for a less dense fluid.
+
+\begin{figure}[h]
+    \centering
+    \subfloat{\includegraphics[width=55mm]{./plots06/01/Compressibility_1}}
+    \subfloat{\includegraphics[width=55mm]{./plots06/005/Compressibility_05}}
+    
+\end{figure}
+\clearpage
+
+\begin{figure}[h]
+     \centering
+     \subfloat{\includegraphics[width=55mm]{./plots06/001/Compressibility_01}}
+     \subfloat{\includegraphics[width=55mm]{./plots06/0005/Compressibility_005}}
+     \caption{The figures show the compressibility of a Lennard Jones fluid with different number densities: (in units of $\sigma^{-3}$) $\rho=0.1$ (top left), $\rho=0.05$ (top right), $\rho=0.01$ (bottom left), and $\rho=0.005$ (bottom right).}
+    
+\end{figure}
+
+
+
+\subsection{Relation with the ideal pressure}
+The following plot shows the relation between the computed pressure and the ideal pressure as a function of the number density:
+\begin{equation}
+	f(\rho) = P - \rho k_B T
+\end{equation}
+The results are however inconclusive, since as can be seen from the plot the data shows a strange behaviour.
+\begin{figure}[h]
+          \centering
+          \includegraphics[width=70mm]{./plots06/pressure_deviation}
+          \caption{The figure shows the pressure deviation as a function of the density $\rho$}
+\end{figure}
+
+\section{Notes on the Statistical Error and Block average}
+The goal of the block average is to obtain from possibly correlated data, uncorrelated data. This is done by dividing the computed data into blocks of given size and averaging over those blocks. Additionally having uncorrelated data as implication on the found statistical error. In fact, for long enough simulations and for large enough block sizes the statistical error will converge to the true value (given by uncorrelated data). This can roughly be seen in the following plot, where for small block sizes the statistical error is much smaller then the true value, while for larger sizes it tends to converge. The partial convergence is probably due to a not long enough simulation.
+\begin{figure}[h]
+          \centering
+          \includegraphics[width=70mm]{./plots06/stat_error}
+          \caption{The figure shows convergence of the statistical error of the pressure in a system with $N=8^3$ and $\rho = 0.5\sigma^{-3}$}
+\end{figure}
+
+
+\end{document}
