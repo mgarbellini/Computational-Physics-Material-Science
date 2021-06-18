@@ -72,28 +72,38 @@ if __name__ == '__main__':
 
 
 
+
     ######## 1st PRODUCTION RUN #######
 
     for iter in tqdm(range(0, int(settings.iter_prod)), desc ="1st Production run T=300K"):
     #for iter in range(2000):
     #for iter in range(0, settings.iter_prod):
         integrator.nose_hoover_integrate(iter)
-        """
-        if iter%20==0:
+
+        if iter%100 == 0:
+            values, bins = routines.radial_distribution_function()
+            if iter == 0:
+                RDF = values
+            else:
+                RDF = RDF + values
+
+        if iter%settings.sampling_freq == 0:
             U.append(system.potential)
             E.append(system.energy)
             T.append(routines.current_temp())
-            CV.append(routines.specific_heat(E, U, T))
-        """
-
-    #CVE = [item[0] for item in CV]
-    #CVU = [item[1] for item in CV]
+            cv = routines.specific_heat(E, U, T)
+            CV.append(cv)
 
 
 
-    """Plots"""
-    #printing.plot(None,U,"Potential energy", "Iterations", "Potential U", "Potential Energy over time", "P")
-    #printing.plot(None,K,"Total energy", "Iterations", "Energy", "System Energy over time", "Energy")
-    #printing.plot(None, CVE,"$CV(\\sigma_E^2)$","Iterations", "Specific Heat", "Specific Heat", "CVE")
-    #printing.plot(None, CVU,"$CV(\\sigma_U^2)$","Iterations", "Specific Heat", "Specific Heat", "CVU")
-    #printing.plot(None, T, "Temperature", "Iterations", "T", "Temp over time", "T")
+    RDF = RDF/settings.iter_prod*100
+    printing.plot(False, bins, RDF, "$g(r)$", "$r$ [m]", "$g(r)$", "Radial distribution function", "rdf")
+
+    """
+    CVE = [item[0] for item in CV]
+    CVU = [item[1] for item in CV]
+
+    printing.plot(False, None, E, "$E = K + U + E_{NH}$", "Iterations", "Total Energy [J]", "Total Energy over time", "E")
+    printing.plot(False, None, U, "U", "Iterations", "Potential Energy [J]", "Potential Energy over time", "P")
+    printing.plot(True, None, [CVE, CVU], ["Cv with $\\sigma_E^2$","Cv with $\\sigma_U^2$"], "Iterations", "Specific Heat", "Specific Heat over time", "CV")
+    """

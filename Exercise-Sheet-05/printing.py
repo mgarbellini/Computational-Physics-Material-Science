@@ -25,12 +25,13 @@ from mpl_toolkits.mplot3d import Axes3D
 # # # # # PLOTTING  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-def plot(x, y, legend, xlabel, ylabel, title, filename):
+
+def plot(double, x, y, legend, xlabel, ylabel, title, filename):
     """Plots the given input data (can be multidimensional)
 
     Args:
         x -- x values
-        y -- y values
+        y -- [y1,y2] values
         legend -- legend text description
         xlabel -- x axis label
         ylabel -- y axis label
@@ -38,30 +39,34 @@ def plot(x, y, legend, xlabel, ylabel, title, filename):
         filename -- output filename
 
     """
-    if not isinstance(y, np.ndarray):
-        y = np.asarray(y)
+    if double == True:
+        y1 = np.asarray(y[0])
+        y2 = np.asarray(y[1])
+    else:
+        y1 = np.asarray(y)
 
-    if x == None:
-        x = np.linspace(1, y.shape[0], num=y.shape[0], endpoint=True)
+    if x.any() == None:
+        x = np.linspace(1, y1.shape[0], num=y1.shape[0], endpoint=True)
     elif not isinstance(x, np.ndarray):
         x = np.asarray(arrray)
+
 
 
     with plt.style.context(['science']):
 
         fig, ax = plt.subplots()
-        for i in range(y.ndim):
-            if y.ndim == 1:
-                ax.plot(x,y,label = legend)
-            else:
-                ax.plot(x, y[:,i], label = legend[i])
+
+        if double == True:
+            ax.plot(x,y1,label = legend[0])
+            ax.plot(x,y2,label = legend[1])
+        else:
+            ax.plot(x,y1,label = legend)
 
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
         ax.legend()
         ax.set_title(title)
         fig.savefig('./' + filename +'.pdf')
-
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # # # # # PRINTING TO FILE  # # # # # # # # # # # # # # # # # # # # # # # # # #

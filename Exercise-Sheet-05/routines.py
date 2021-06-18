@@ -20,6 +20,7 @@ import system
 import integrator
 import settings
 import const
+import force
 import itertools
 import matplotlib.pyplot as plt
 
@@ -62,19 +63,21 @@ def rdf_distances(pos, L, distances):
     Notes:
         -- the routine runs using Numba @njit decorator for faster run time
     """
+
     d_index = 0
-    for i in range(pos.shape[0] - 1):
-        for j in range(i + 1, pos.shape[0]):
-            rx = mic(pos[i, 0],pos[j,0], L[0])
-            ry = mic(pos[i, 1],pos[j,1], L[1])
-            rz = mic(pos[i, 2],pos[j,2], L[2])
-            distances[d_index] = rx*rx + ry*ry + rz*rz
-            distances[d_index+1] = distances[d_index]
+    for i in range(pos.shape[0]):
+        for j in range(pos.shape[0]):
+            if i!=j:
+                rx = mic(pos[i, 0],pos[j,0], L[0])
+                ry = mic(pos[i, 1],pos[j,1], L[1])
+                rz = mic(pos[i, 2],pos[j,2], L[2])
+                distances[d_index] = np.sqrt(rx*rx + ry*ry + rz*rz)
+                d_index += 1
 
     return distances
 
 @njit
-def rdf_normalize(rdf, bins, N, rho):
+def rdf_normalize(norm, rdf, bins, N, rho):
     """Computes radial distribution function normalization
 
     Args:
@@ -89,14 +92,27 @@ def rdf_normalize(rdf, bins, N, rho):
     Notes:
         -- the routine runs using Numba @njit decorator for faster run time
     """
-    for i in range(rdf.shape[0]):
-        shell_volume = 4*np.pi*((bins[i+1])**3-bins[i]**3)/3
-        rdf[i] = rdf[i]/(N*shell_volume*rho)
+    for i in range(len(rdf)):
+        shell_volume = 4*np.pi*(bins[i+1]**3 - bins[i]**3)/3
+        norm[i] = rdf[i]/N/shell_volume/rho
 
-    return rdf
+    print(norm-rdf)
+    return norm, bins[1:]
+
+def rdf_fixed(bins, count, dist, N, rho):
+
+    for i in range(len(bins)-1):
+        for d in dist:
+            if ((bins[i] <= d )&(d < bins[i+1])):
+                count[i] += 1
+         #normalize
+        shell_volume = 4*np.pi*(bins[i+1]**3 - bins[i]**3)/3
+        count[i] = count[i]/N/shell_volume/rho
+
+    return count
 
 
-def radial_distribution_function(nbins=100):
+def radial_distribution_function(nbins=200):
     """Computes the radial distribution function of the system, among with
     the coordination number and the isothermal compressibility
 
@@ -112,25 +128,26 @@ def radial_distribution_function(nbins=100):
 
     # Array of distances
     dist = np.zeros(system.N*(system.N-1))
-    dist = rdf_distances(system.pos, system.L, dist)
-    dist = np.sqrt(dist)
+    dist = rdf_distances(system.pos/force.sigma, system.L/force.sigma, dist)
 
-    max_dist = 0.5*system.L[0]
+    max_dist = 0.5*system.L[0]/force.sigma
     bins = np.linspace(0., max_dist, nbins)
+    rdf = rdf_fixed(bins, np.zeros(len(bins)-1, dtype = np.float), dist, system.N, system.rho*force.sigma**3)
 
     # Radial Distribution Function
-    histogram = np.histogram(dist, bins=bins, density=False)
-    rdf = rdf_normalize(histogram[0], histogram[1], system.N, system.rho)
-    rdf_bins = histogram[1]
+    #histogram = np.histogram(dist, bins=bins, density=False)
+    #rdf, bins = rdf_normalize(np.zeros(histogram[0].shape, dtype=np.float), histogram[0], histogram[1], system.N, system.rho*force.sigma**3)
+
 
 
     # Coordination Number
-    n_c = 4*np.pi*system.rho * np.cumsum(rdf*bins[1]*bins[1:]**2)
+    #n_c = 4*np.pi*system.rho * np.cumsum(rdf*bins[1]*bins[1:]**2)
 
     # Isothermal Compressibility
-    k_t = np.cumsum(4/(system.T) * np.pi * (rdf-1) * bins[1] * bins[1:]**2) + 1/(system.T  * system.rho)
+    #k_t = np.cumsum(4/(system.T) * np.pi * (rdf-1) * bins[1] * bins[1:]**2) + 1/(system.T  * system.rho)
 
-    return rdf, rdf_bins, n_c, k_t[-1]
+    #return rdf, bins, 0, 0
+    return rdf, bins[1:]
 
 """Density profile"""
 def density_profile(axis, nbins = 100):
@@ -335,11 +352,8 @@ def specific_heat(energy, potential, temperature):
 
     return [CV_e, CV_u]
 
-@njit
-def temp(kinetic, KB, N):
-    return 2*kinetic/3./KB/N
-
 def current_temp():
     """Computes current temperature using the kinetic energy relation
     """
-    return temp(system.kinetic, const.KB, system.N)
+    temp = 2*system.kinetic/3./const.KB/system.N
+    return temp

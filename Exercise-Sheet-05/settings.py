@@ -34,7 +34,7 @@ def init():
 
     """TYPE OF ENSEMBLE"""
     system.ensemble = 'micro'
-    system.T = 300
+    system.T = 100
 
     """LJ POTENTIAL VARIABLES"""
     force.epsilon = 0.5*system.T*kb
@@ -42,7 +42,7 @@ def init():
     force.cutoff = 2.5*force.sigma  # in units of sigma
 
     """SYSTEM VARIABLES"""
-    system.n = [10, 10, 10]  # number of particles per dimension
+    system.n = [6, 6, 6]  # number of particles per dimension
     system.dim = 3  # dimension of the sytem (2 or 3 - dimensional)
     system.N = system.n[0]*system.n[1]*system.n[2]  # Number of particles
     system.rho = 0.25/force.sigma**3  # Number density
@@ -56,10 +56,10 @@ def init():
     global DT, m, iter_equ, iter_prod, rescaling_freq, sampling_freq
     DT = 1E-15
     m = 50
-    iter_equ = 2000
-    iter_prod = 2000
+    iter_equ = 4000
+    iter_prod = 4000
     rescaling_freq = 10
-    sampling_freq = 50
+    sampling_freq = 10
 
     """SYSTEM/PARTICLES VARIABLES"""
     system.mass = 105.52E-27  # the particles are assumed have the same mass
