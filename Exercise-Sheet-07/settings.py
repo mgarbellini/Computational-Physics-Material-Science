@@ -42,7 +42,7 @@ def init():
     force.cutoff = 2.5*force.sigma  # in units of sigma
 
     """SYSTEM VARIABLES"""
-    system.n = [6, 6, 6]  # number of particles per dimension
+    system.n = [8, 8, 8]  # number of particles per dimension
     system.dim = 3  # dimension of the sytem (2 or 3 - dimensional)
     system.N = system.n[0]*system.n[1]*system.n[2]  # Number of particles
     system.rho = 0.5/force.sigma**3  # Number density
@@ -58,10 +58,10 @@ def init():
     global DT, m, iter_equ, iter_prod, rescaling_freq, sampling_freq
     DT = 1E-15
     m = 50
-    iter_equ = 20000
-    iter_prod = 300000
+    iter_equ = 5000
+    iter_prod = 45000
     rescaling_freq = 10
-    sampling_freq = 50
+    sampling_freq = 10
 
     """SYSTEM/PARTICLES VARIABLES"""
     system.mass = 105.52E-27  # the particles are assumed have the same mass
@@ -79,22 +79,3 @@ def init():
     routines.velocity_rescale()
     force.LJ_potential_shift()
     routines.compute_Q()
-
-
-def check_init():
-
-    print(system.ensemble)
-
-    """LJ POTENTIAL VARIABLES"""
-    print(force.epsilon, force.sigma, force.cutoff)
-
-    """SYSTEM VARIABLES"""
-
-    print(system.n, system.dim, system.N, system.rho, system.L, system.alat)
-    print(system.T)
-
-    """SIMULATION VARIABLES"""
-    print(DT, m, iter_equ, iter_prod, rescaling_freq)
-
-    print(system.mass, system.pos[0, 0], system.vel[0, 0],
-          system.force[0, 0], system.xi, system.lns, system.Q)

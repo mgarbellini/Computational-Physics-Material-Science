@@ -105,3 +105,21 @@ def save_data(data,filename):
 
     file.write("\n")
     file.close()
+
+def save_array(array, filename):
+    """Saves numpy array to file
+
+    Args:
+        array -- array containing data to be saved
+        filename -- name of file
+    """
+
+    filename = filename + '.txt'
+    file = open(filename, 'a')
+
+    for i in range(array.shape[0]):
+        for dim in range(array.shape[1]):
+            file.write(str(array[i,dim]) + " ")
+
+    file.write("\n")
+    file.close()
