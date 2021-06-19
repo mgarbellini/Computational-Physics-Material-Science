@@ -45,11 +45,12 @@ def equilibration_run():
 
 def production_run():
 
-
     for iter in tqdm(range(0, int(settings.iter_prod)), desc ="Production run T=300K "):
 
         integrator.nose_hoover_integrate(iter)
 
+        if iter%settings.sampling_freq == 0:
+            printing.save_array(system.pos, "positions")
 
 
 if __name__ == '__main__':
