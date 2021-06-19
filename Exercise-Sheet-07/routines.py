@@ -334,7 +334,7 @@ def rdf_distances(pos, L, distances):
     return distances
 
 @njit
-def rdf(bins, count, dist, N, rho):
+def nrdf(bins, count, dist, N, rho):
 
     for i in range(len(bins)-1):
         for d in dist:
@@ -345,6 +345,14 @@ def rdf(bins, count, dist, N, rho):
         count[i] = count[i]/N/shell_volume/rho
 
     return count
+
+@njit
+def isothermal_integral(g,x):
+    integral = 0
+    for i in range(g.shape[0]):
+        integral += (g[i]-1)*x[0]*x[i]*x[i]
+
+    return integral
 
 
 def radial_distribution_function(nbins=50):
@@ -366,19 +374,19 @@ def radial_distribution_function(nbins=50):
 
     max_dist = 0.5*system.L[0]/force.sigma
     bins = np.linspace(0., max_dist, nbins)
-    rdf = rdf_fixed(bins, np.zeros(len(bins)-1, dtype = np.float), dist, system.N, system.rho*force.sigma**3)
+    rdf = nrdf(bins, np.zeros(len(bins)-1, dtype = np.float), dist, system.N, system.rho*force.sigma**3)
 
 
     # Coordination Number
     #n_c = 4*np.pi*system.rho * np.cumsum(rdf*bins[1]*bins[1:]**2)
 
     # Isothermal Compressibility
-    kt = 4*np.pi*np.cumsum((rdf-1) * bins[1]*force.sigma * (bins[1:]*force.sigma)**2)/system.T/const.KB + 1/(const.KB * system.T  * system.rho)
-
-    tot_area = 4*np.pi*np.sum(rdf*bins[1]*force.sigma)*system.L[0]**2
-    kt = (1/const.KB*system.T)*(1/system.rho + tot_area - 4/3*np.pi*system.L[0]**3)
-
-    return rdf, bins[1:]
+    #kt = 4*np.pi*np.cumsum((rdf-1) * bins[1]*force.sigma * (bins[1:]*force.sigma)**2)/system.T/const.KB + 1/(const.KB * system.T  * system.rho)
+    #tot_area = 4*np.pi*np.sum(rdf*bins[1]*force.sigma)*system.L[0]**2
+    #kt = (1/const.KB*system.T)*(1/system.rho + tot_area - 4/3*np.pi*system.L[0]**3)
+    integral = isothermal_integral(rdf, bins[1:]*force.sigma)
+    kt = 1/const.KB/system.T/system.rho + 4*np.pi*integral/const.KB/system.T
+    return rdf, bins[1:], kt
 
 
 """Density profile"""
