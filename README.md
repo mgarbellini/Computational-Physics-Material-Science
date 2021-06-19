@@ -7,3 +7,6 @@ The following are the proposed simulations/tutorials/exercise sheets (in chronol
 - Exercise Sheet 02: (MD) Lennard-Jones fluid
 - Exercise Sheet 03: (MD) Lennard-Jones fluid with radial distribution function 
 - Exercise Sheet 04: (MD) Lennard-Jones fluid confined between two walls
+- Exercise Sheet 05: (MD) 
+- Exercise Sheet 06: (MD) 
+- Exercise Sheet 07: (MD) 
