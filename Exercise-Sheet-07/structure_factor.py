@@ -116,5 +116,28 @@ if __name__ == '__main__':
     printing.plot(True, knorm[1:], [(np.asarray(S))[1:], np.asarray(S_int)], ["Sum of sin and cos", "Integral of $g(r)$"], "$k$ [?]", "$S(k)$", "Structure factor", "structure_factor")
 
     """isothermal compressibility"""
+    S_to_zero = structure_factor_integral(rdf,bins*force.sigma, 0.5, system.rho)
     kt = S_int[0]/system.rho/const.KB/system.T
-    print(kt)
+    kt0 = S_to_zero/system.rho/const.KB/system.T
+
+
+    print("with k=1 ",kt)
+    print("with k=0.5 ",kt0)
+    print("explicit from g(r)", isothermal[-1])
+
+    """isothermal compressibility near zero """
+    k = np.linspace(0.01, 2, num=20)*np.sqrt(3)*2*np.pi/system.L[0]
+    kplot = np.linspace(0.01, 2, num=20)
+    ktint = []
+    ktgr = []
+    kt = []
+    structure = 0
+    for i in tqdm(range(len(k)), desc = "Isothermal compressibility"):
+        structure = structure_factor_integral(rdf,bins*force.sigma, k[i], system.rho)
+        ktgr.append(structure_factor(posx, posy, posz, k[i]))
+        ktint.append(structure/system.rho/const.KB/system.T)
+        kt.append(isothermal[-1])
+
+
+    printing.plot(True, kplot, [np.asarray(ktint), np.asarray(kt)], ["with lim k 0", "Explicit $k_T$ from $g(r)$"], "$k$ [?]", "$k_T$", "Isothermal compressibility", "isothermal_compressibility_compared")
+    printing.plot(False, kplot, np.asarray(ktgr), "with lim k-> 0", "$k$ [?]", "$k_T$", "Isothermal compressibility", "isothermal_compressibility_gr")
