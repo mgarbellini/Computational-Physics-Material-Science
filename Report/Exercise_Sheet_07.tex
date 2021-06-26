@@ -1,0 +1,151 @@
+\documentclass[aps,pra,reprint, onecolumn, rmp]{revtex4-2}
+\usepackage{lipsum}
+\usepackage{listings}
+
+\usepackage{etoolbox}
+\patchcmd{\section}
+  {\centering}
+  {\raggedright}
+  {}
+  {}
+\patchcmd{\subsection}
+  {\centering}
+  {\raggedright}
+  {}
+  {}
+
+
+\usepackage{xcolor}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{pystyle}{
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2
+}
+%\lstset{style=pystyle}
+\lstset{language=Python}
+\lstset{frame=lines}
+\lstset{caption={Insert code directly in your document}}
+\lstset{label={lst:code_direct}}
+\lstset{basicstyle=\footnotesize}
+
+
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage{adjustbox}
+\usepackage[upgreek]{mathastext}
+\usepackage{tabularx}
+\newcommand\setrow[1]{\gdef\rowmac{#1}#1\ignorespaces}
+\newcommand\clearrow{\global\let\rowmac\relax}
+\clearrow
+
+\usepackage{amsmath}
+
+\begin{document}
+
+%Title of paper
+\title{COMPUTATIONAL PHYSICS - EXERCISE SHEET 07 \\Radial distribution function, Structure Factor, and Isothermal Compressibility}
+
+\author{Matteo Garbellini}
+\email[]{matteo.garbellini@studenti.unimi.it}
+\homepage[]{https://github.com/mgarbellini/Computational-Physics-Material-Science}
+\affiliation{Department of Physics, University of Freiburg \\ }
+
+
+\date{\today}
+
+\begin{abstract}
+The following is the report for the Exercise Sheet 07. The goal of this exercise is to recover the relationship between the radial distribution function, the structure factor, and the isothermal compressibility. Along this report, python scripts were also handed in. Additional code can be found at the github repository given at the end of this page.
+\end{abstract}
+
+
+%\maketitle must follow title, authors, abstract, and keywords
+\maketitle
+
+
+
+% % % % % % % % %
+% MAIN REPORT   %
+% % % % % % % % %
+\section{Code implementation}
+The new code consists in a \textit{structure-factor.py} module that handles the necessary analysis given a \textit{position.txt} as input file. In particular the following quantities are being computed:
+\begin{itemize}
+  \item Radial distribution function $g(r)$ -- as in Exercise Sheet 03 
+  \item Structure factor using the sum of sine and cosine relation
+  \item Structure factor using an explicit integral of $g(r)$
+  \item Isothermal compressibility $k_T$ -- as in Exercise Sheet 03
+\end{itemize}
+
+
+% % % % % % % % %
+% SECTION 1 %
+% % % % % % % % %
+
+\section{Simulation parameters and procedures}
+The simulation consist in a system with $N=8^3$ particles (number density $\\rho = 0.5 \\sigma^{-3}$), integrated for a total of 100000 iterations, of which the first 10000 is are used for equilibrating the system at temperature $T=300K$. The positions of the particles are saved every 10 steps.
+After the simulations, the module \textit{structure-factor.py} was run and the analysis was performed.
+
+
+% % % % % % % % %
+% SECTION 2   %
+% % % % % % % % %
+\section{RESULTS}
+\subsection{Radial Distribution Function}
+The following plot shows the radial distribution obtained for the simulation. 
+
+\begin{figure}[h]
+          \centering
+          \includegraphics[width=100mm]{./plots07/radial}
+          \caption{The figure shows radial distribution function of a system with number density $\\rho = 0.5 \\sigma^{-3}$.}
+\end{figure}
+
+
+\subsection{Structure Factor $S(k)$}
+The following figure shows the structure as a function of $k$ computed using the sum of sine and cosine relation and the explicit $g(r)$ integral. The position of the first peak should be $\approx \frac{2\pi}{\lambda}$, where $\lambda$ is the typical lenght-scale of the system. Such relation approximately works assuming the position of the first peak of the $g(r)$ as the typical lenght-scale. This leads to $\approx 0.21 * 10^{11}$
+
+\begin{figure}[h]
+          \centering
+          \includegraphics[width=100mm]{./plots07/structure_factor}
+          \caption{The figure shows the structure factor $S(k)$ as a function of the wave vector.}
+\end{figure}
+
+
+
+
+
+\subsection{Isothermal Compressibility over time}
+The following figure shows the isothermal compressibility over time, reaching a stable value for large times. 
+
+\begin{figure}[h]
+          \centering
+          \includegraphics[width=100mm]{./plots07/isothermal}
+          \caption{The figure shows the isothermal compressibility over time.}
+\end{figure}
+
+\subsection{Isothermal Compressibility from $S(k)$}
+The following plot shows the retrieved isothermal compressibility from the limit of $S(k)$ where $k$ is approaching zero. In particular we used the integral relation for $S(k)$, which shows consistent results. The sum of sin and cosine relationship diverges to large number for k close to zero, therefore the results were not included.
+
+\begin{figure}[h]
+          \centering
+          \includegraphics[width=100mm]{./plots07/isothermal_compared}
+          \caption{The figure shows the isothermal compressibility as the limit of $S(k)$ and the one calculated explicitly using the Kirkwood-Buff integral of the radial distribution function.}
+\end{figure}
+
+\end{document}
