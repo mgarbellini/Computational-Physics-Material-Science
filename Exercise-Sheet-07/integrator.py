@@ -167,7 +167,7 @@ def nh_vel1(v, f, xi, m, dt):
     return v
 
 @njit()
-def nh_pos(v, p, dt):
+def nh_pos(v, p, dt, L):
     """Updates position using the Nose-Hoover half step velocity verlet
 
     Args:
@@ -183,12 +183,11 @@ def nh_pos(v, p, dt):
     """
 
     for i in range(p.shape[0]):
-        p[i, 0] += v[i, 0]*dt
-        p[i, 1] += v[i, 1]*dt
-        p[i, 2] += v[i, 2]*dt
+        p[i, 0] = np.mod(p[i, 0] + v[i, 0]*dt, L[0])
+        p[i, 1] = np.mod(p[i, 1] + v[i, 1]*dt, L[1])
+        p[i, 2] = np.mod(p[i, 2] + v[i, 2]*dt, L[2])
 
     return p
-
 @njit
 def nh_vel2(v, f, m, xi, dt):
     """Computes the full step velocity using the nose-hoover velocity verlet
@@ -223,7 +222,7 @@ def nose_hoover_integrate(iter):
     vel_half = nh_vel1(system.vel, system.force,
                        system.xi, system.mass, settings.DT)
 
-    system.pos = nh_pos(vel_half, system.pos, settings.DT)
+    system.pos = nh_pos(vel_half, system.pos, settings.DT, system.L)
 
     kinetic_half = compute_kinetic(vel_half, system.mass)
 

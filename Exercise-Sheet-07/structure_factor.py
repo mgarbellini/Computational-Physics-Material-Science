@@ -9,7 +9,7 @@ Contains the analysis routines for computing the structure
 factor as explained in Exercise Sheet 07, given a file "positions.txt"
 as input. Thus this is a standalone script
 
-Latest update: June 18th 2021
+Latest update: June 21st 2021
 """
 import numpy as np
 import routines
@@ -87,7 +87,6 @@ if __name__ == '__main__':
 
 
     """Check that positions are correct by computing radial distribution function"""
-
     rdf = 0
     isothermal = []
     for i in tqdm(range(pos.shape[2]), desc = "Radial distribution function"):
@@ -98,8 +97,8 @@ if __name__ == '__main__':
 
     rdf = rdf/pos.shape[2]
     xx = np.linspace(0,pos.shape[2], num=len(isothermal))
-    printing.plot(False, bins, rdf, "$g(r)$", "$r$ [$\\sigma$]", "$g(r)$", "RDF with $\\rho = 0.005\\sigma^{-3}$", "Radial")
-    printing.plot(False, xx, isothermal, "$g(r)$", "$r$ [$\\sigma$]", "$g(r)$", "RDF with $\\rho = 0.005\\sigma^{-3}$", "Isothermal")
+    printing.plot(False, bins, rdf, "$g(r)$", "$r$ [$\\sigma$]", "$g(r)$", "RDF with $\\rho = 0.5\\sigma^{-3}$", "Radial")
+    printing.plot(False, xx, isothermal, "$k_T(t)$", "Iterations", "$k_T$", "Isothermal Compressibility", "Isothermal")
 
 
     """Computes the structure factor for all iterations"""
@@ -110,20 +109,13 @@ if __name__ == '__main__':
         if i>0:
             S_int.append(structure_factor_integral(rdf, bins*force.sigma, knorm[i], system.rho))
 
-
-    printing.plot(False, k[1:], (np.asarray(S))[1:], "$g(r)$", "$r$ [$\\sigma$]", "$g(r)$", "RDF with $\\rho = 0.005\\sigma^{-3}$", "S")
-    printing.plot(False, knorm[1:], np.asarray(S_int), "$g(r)$", "$r$ [$\\sigma$]", "$g(r)$", "RDF with $\\rho = 0.005\\sigma^{-3}$", "S_int")
-    printing.plot(True, knorm[1:], [(np.asarray(S))[1:], np.asarray(S_int)], ["Sum of sin and cos", "Integral of $g(r)$"], "$k$ [?]", "$S(k)$", "Structure factor", "structure_factor")
+    printing.plot(True, knorm[1:], [(np.asarray(S))[1:], np.asarray(S_int)], ["Sum of sin and cos", "Integral of $g(r)$"], "$|k|$", "$S(k)$", "Structure factor", "structure_factor")
 
     """isothermal compressibility"""
     S_to_zero = structure_factor_integral(rdf,bins*force.sigma, 0.5, system.rho)
     kt = S_int[0]/system.rho/const.KB/system.T
     kt0 = S_to_zero/system.rho/const.KB/system.T
 
-
-    print("with k=1 ",kt)
-    print("with k=0.5 ",kt0)
-    print("explicit from g(r)", isothermal[-1])
 
     """isothermal compressibility near zero """
     k = np.linspace(0.01, 2, num=20)*np.sqrt(3)*2*np.pi/system.L[0]
@@ -138,6 +130,4 @@ if __name__ == '__main__':
         ktint.append(structure/system.rho/const.KB/system.T)
         kt.append(isothermal[-1])
 
-
-    printing.plot(True, kplot, [np.asarray(ktint), np.asarray(kt)], ["with lim k 0", "Explicit $k_T$ from $g(r)$"], "$k$ [?]", "$k_T$", "Isothermal compressibility", "isothermal_compressibility_compared")
-    printing.plot(False, kplot, np.asarray(ktgr), "with lim k-> 0", "$k$ [?]", "$k_T$", "Isothermal compressibility", "isothermal_compressibility_gr")
+    printing.plot(True, kplot, [np.asarray(ktint), np.asarray(kt)], ["with $\\lim_{k \\to 0} S(k)$", "Explicit $k_T$ equation"], "$|k|$", "$k_T$", "Isothermal compressibility", "isothermal_compressibility_compared")
