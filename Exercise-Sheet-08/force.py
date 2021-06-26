@@ -330,9 +330,9 @@ def coulombic_wall(force, pos, pos_discrete, charge, discrete_surface_q, L):
             rij = np.sqrt(r)
 
             if rij < Rc:
-                force[i,0] += k * (-2*np.exp(-(rij/Rc)**2)/rij/Rc/np.sqrt(np.pi) -math.erfc(rij/Rc)*distx/r + c_shift*distx/rij)
-                force[i,1] += k * (-2*np.exp(-(rij/Rc)**2)/rij/Rc/np.sqrt(np.pi) -math.erfc(rij/Rc)*disty/r + c_shift*disty/rij)
-                force[i,2] += k * (-2*np.exp(-(rij/Rc)**2)/rij/Rc/np.sqrt(np.pi) -math.erfc(rij/Rc)*distz/r + c_shift*distz/rij)
+                force[i,0] -= k * (-2*np.exp(-(rij/Rc)**2)/rij/Rc/np.sqrt(np.pi) -math.erfc(rij/Rc)*distx/r + c_shift*distx/rij)
+                force[i,1] -= k * (-2*np.exp(-(rij/Rc)**2)/rij/Rc/np.sqrt(np.pi) -math.erfc(rij/Rc)*disty/r + c_shift*disty/rij)
+                force[i,2] -= k * (-2*np.exp(-(rij/Rc)**2)/rij/Rc/np.sqrt(np.pi) -math.erfc(rij/Rc)*distz/r + c_shift*distz/rij)
 
     return force
 

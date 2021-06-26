@@ -237,18 +237,18 @@ def nose_hoover_integrate(iter):
     system.force, system.potential, vir = force.lennard_jones(
         np.zeros((system.force.shape), dtype=np.float), system.pos, system.L)
 
-    lj_force = np.mean(system.force)
+
 
     """Interaction between wall and particles"""
     system.force, system.potential = force.lennard_jones_wall(
         system.force, system.pos, system.L, system.potential)
 
-    lj_wall_force = np.mean(system.force)
+
     """Coulombic interaction between surface discrete charges and particles"""
     system.force = force.coulombic_wall(
         system.force, system.pos, system.discrete_surface_q_pos, system.charge, system.discrete_surface_q, system.L)
 
-    c_wall_force = np.mean(system.force)
+
 
     system.vel = nh_vel2(vel_half, system.force,
                          system.mass, system.xi, settings.DT)
@@ -258,5 +258,3 @@ def nose_hoover_integrate(iter):
         system.kinetic = compute_kinetic(system.vel, system.mass)
         system.nose_hoover = routines.nose_hoover_energy(system.Q, system.xi, system.N, settings.kb, system.T, system.lns)
         system.energy = system.kinetic + system.potential + system.nose_hoover
-
-    if iter %500 == 0: print(lj_force, lj_wall_force , c_wall_force)

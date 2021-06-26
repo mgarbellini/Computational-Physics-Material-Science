@@ -59,7 +59,7 @@ def production_run():
         integrator.nose_hoover_integrate(iter)
 
         if iter%settings.sampling_freq == 0:
-            printing.save_1d_array(system.pos[:,2], "positions" + str(system.surface_charge))
+            printing.save_1d_array(system.pos[:,2], "positions")
 
 
 if __name__ == '__main__':
