@@ -1,0 +1,119 @@
+\documentclass[aps,pra,reprint, onecolumn, rmp]{revtex4-2}
+\usepackage{lipsum}
+\usepackage{listings}
+
+\usepackage{etoolbox}
+\patchcmd{\section}
+  {\centering}
+  {\raggedright}
+  {}
+  {}
+\patchcmd{\subsection}
+  {\centering}
+  {\raggedright}
+  {}
+  {}
+
+
+\usepackage{xcolor}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{pystyle}{
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2
+}
+%\lstset{style=pystyle}
+\lstset{language=Python}
+\lstset{frame=lines}
+\lstset{caption={Insert code directly in your document}}
+\lstset{label={lst:code_direct}}
+\lstset{basicstyle=\footnotesize}
+
+
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage{adjustbox}
+\usepackage[upgreek]{mathastext}
+\usepackage{tabularx}
+\newcommand\setrow[1]{\gdef\rowmac{#1}#1\ignorespaces}
+\newcommand\clearrow{\global\let\rowmac\relax}
+\clearrow
+
+\usepackage{amsmath}
+
+\begin{document}
+
+%Title of paper
+\title{COMPUTATIONAL PHYSICS - EXERCISE SHEET 08 \\Poisson-Boltzmann equation in planar geometry: Application to the counter-ions.}
+
+\author{Matteo Garbellini}
+\email[]{matteo.garbellini@studenti.unimi.it}
+\homepage[]{https://github.com/mgarbellini/Computational-Physics-Material-Science}
+\affiliation{Department of Physics, University of Freiburg \\ }
+
+
+\date{\today}
+
+\begin{abstract}
+The following is the report for the Exercise Sheet 08. The goal of this exercise is to merge the NVT ensemble with the Lennard-Jones fluid confined between two walls, and enriching it with Coulomb potential between particles. Along this report, python scripts were also handed in. Additional code can be found at the github repository given at the end of this page. 
+\end{abstract}
+
+
+%\maketitle must follow title, authors, abstract, and keywords
+\maketitle
+
+\section{Code implementation}
+The new code merges the NVT ensemble implementation of the previous exercise sheets with the LJ fluid confined between two walls positioned at $z=0$ and $z=2L$. Additionally Coulombic interaction is addedd between atoms.
+
+\section{Simulation parameters and procedures}
+The simulation consist in a system with $N = 250 $ particles (number density $\rho = 0.5 \sigma^{-3}$), integrated for a total of 60000 iterations, of which the first 10000 are used for equilibrating the system at temperature $T=300K$. The positions of the particles are saved every 10 steps.
+After the simulations, the module \textit{profiles.py} was run and the analysis was performed.
+
+\section{Results}
+The simulations produced inconsistent results, therefore the following plots are presented for completeness and no significant considerations can be made. It is to be noted that from the instructions it was not clear whether for point (c) and (d) the interaction with the charged surfaces was to be included. Indeed in point(e) we were asked to compare the two models -- discrete surface charges and the uniformly distributed surface charge. Additionally I was not able to retrieve the relationship of $n(z)$ with the given function in terms of $k$, since the $cos^2$ term $kz$ was too small (order of $10^{-13}$).
+
+
+\begin{figure}[h]
+          \centering
+          \includegraphics[width=70mm]{./plots08/densityprofile_simul_1}
+          \caption{The figure shows the density profile over the $z$ axis, with a surface density charge $\sigma_{surf} = 0.005a/A^2$}
+\end{figure}
+
+\begin{figure}[th]
+     \centering
+     \subfloat{\includegraphics[width=65mm]{./plots08/densityprofile_simul_3}}
+     \subfloat{\includegraphics[width=65mm]{./plots08/densityprofile_simul_4}}
+     \caption{The figure shows the density profile over the $z$ axis of a system with different surface density charge (in $e/A^2$): 0.00375 (left) and 0.001 (right) }
+    
+\end{figure}
+
+\begin{figure}[h]
+     \centering
+     \subfloat{\includegraphics[width=65mm]{./plots08/densityprofile_simul_pos}}
+     \subfloat{\includegraphics[width=65mm]{./plots08/densityprofile_simul_neg}}
+     \caption{The figure shows the density profile over the $z$ axis of a system with discrete surface charges: same sign (left) and opposite sign (right)}
+    
+\end{figure}
+
+
+
+
+
+\end{document}
