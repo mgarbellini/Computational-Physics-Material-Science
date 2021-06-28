@@ -70,7 +70,7 @@ def init():
     DT = 1E-15
     m = 50
     iter_equ = 10000
-    iter_prod = 5*iter_equ
+    iter_prod = 10*iter_equ
     rescaling_freq = 10
     sampling_freq = 10
     ovito_freq = 50

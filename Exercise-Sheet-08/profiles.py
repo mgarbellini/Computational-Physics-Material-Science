@@ -44,9 +44,8 @@ def theoretical_prediction(density, x):
     nm = density[int(len(density)/2)]
     k = np.sqrt(nm*2*np.pi*system.e*system.e/force.epsilon_not/settings.kb/system.T)
     print(k)
-    cos2 = np.cos(k*x/force.sigma)**2
-    print(cos2)
-    f = nm/cos2
+    cos2 = np.cos(k*x*force.sigma)**2
+    f = float(nm)/cos2
     return f
 
 
@@ -54,7 +53,7 @@ if __name__ == '__main__':
 
     settings.init()
 
-    pos = import_array("positions")
+    pos = import_array("positions_pos")
 
     profile = 0
     for i in tqdm(range(pos.shape[1]), desc="Density Profile"):

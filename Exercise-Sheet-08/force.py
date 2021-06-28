@@ -28,7 +28,8 @@ cutoff_wall = None
 Rc = None
 c_shift = None
 potential_shift = None
-epsilon_not = 8.9875517923E9
+epsilon_not = 8.854E-12
+electrostatic = True
 
 
 @njit
@@ -162,7 +163,7 @@ def lennard_jones_serial_istance(force, pos, L, charge):
             r = distx * distx + disty * disty + distz * distz
 
             """Lennard Jones Potential Cutoff"""
-            if(r < cutoff**2):
+            if(np.sqrt(r) < cutoff):
                 fx = 48 * epsilon * (sigma**12 * distx / r**7 - 0.5 * sigma**6 * distx / r**4)
                 fy = 48 * epsilon * (sigma**12 * disty / r**7 - 0.5 * sigma**6 * disty / r**4)
                 fz = 48 * epsilon * (sigma**12 * distz / r**7 - 0.5 * sigma**6 * distz / r**4)
@@ -181,26 +182,25 @@ def lennard_jones_serial_istance(force, pos, L, charge):
 
                 potential += 2 * 4 * epsilon * (sigma**12 / r**6 - sigma**6 / r**3) - potential_shift
 
-            """Coulomb Potential Cutoff"""
-            if(r < Rc**2):
+                """Coulomb Potential Cutoff"""
+                if electrostatic == True:
 
-                k = charge[i]*charge[j]/4/np.pi/epsilon_not
-                rij = np.sqrt(r)
+                    k = charge[i]*charge[j]/4/np.pi/epsilon_not
+                    rij = np.sqrt(r)
 
-                fx = k * (-2*np.exp(-(rij/Rc)**2)/rij/Rc/np.sqrt(np.pi) -math.erfc(rij/Rc)*distx/r + c_shift*distx/rij)
-                fy = k * (-2*np.exp(-(rij/Rc)**2)/rij/Rc/np.sqrt(np.pi) -math.erfc(rij/Rc)*disty/r + c_shift*disty/rij)
-                fz = k * (-2*np.exp(-(rij/Rc)**2)/rij/Rc/np.sqrt(np.pi) -math.erfc(rij/Rc)*distz/r + c_shift*distz/rij)
+                    fx = k * (-2*np.exp(-(rij/Rc)**2)/rij/Rc/np.sqrt(np.pi) -math.erfc(rij/Rc)*distx/r + c_shift*distx/rij)
+                    fy = k * (-2*np.exp(-(rij/Rc)**2)/rij/Rc/np.sqrt(np.pi) -math.erfc(rij/Rc)*disty/r + c_shift*disty/rij)
+                    fz = k * (-2*np.exp(-(rij/Rc)**2)/rij/Rc/np.sqrt(np.pi) -math.erfc(rij/Rc)*distz/r + c_shift*distz/rij)
 
-                force[i, 0] += fx
-                force[i, 1] += fy
-                force[i, 2] += fz
+                    force[i, 0] += fx
+                    force[i, 1] += fy
+                    force[i, 2] += fz
 
-                force[j, 0] -= fx
-                force[j, 1] -= fy
-                force[j, 2] -= fz
+                    force[j, 0] -= fx
+                    force[j, 1] -= fy
+                    force[j, 2] -= fz
 
-
-                potential += 2*k*(math.erfc(rij/Rc)/rij - math.erfc(1)/Rc + c_shift*(rij - Rc))
+                    potential += 2*k*(math.erfc(rij/Rc)/rij - math.erfc(1)/Rc + c_shift*(rij - Rc))
 
 
 
@@ -269,14 +269,14 @@ def lennard_jones_wall(force, pos, L,potential, axis = 2):
     for i in range(pos.shape[0]):
         if(pos[i, axis] < cutoff_wall):
             z = pos[i, axis]
-            potential += const * (sigma_wall**6 / z**9 - 1 / z**3)
-            force[i, axis] -= const * (-9 * sigma_wall**6 / z**10 + 3 / z**4)
+            potential += const * (sigma_wall**6/z**9 - 1/z**3)
+            force[i, axis] -= const * (-9*sigma_wall**6/z**10 + 3/z**4)
 
 
         if(pos[i, axis] > (L[axis] - cutoff_wall)):
             z = L[axis] - pos[i, axis]
             potential += const * (sigma_wall**6/z**9 - 1/z**3)
-            force[i, axis] += const * (-9 * sigma_wall**6/z**10 + 3/z**4)
+            force[i, axis] += const * (-9*sigma_wall**6/z**10 + 3/z**4)
 
 
     return force, potential
@@ -306,9 +306,9 @@ def coulombic_wall(force, pos, pos_discrete, charge, discrete_surface_q, L):
             rij = np.sqrt(r)
 
             if rij < Rc:
-                force[i,0] += k * (-2*np.exp(-(rij/Rc)**2)/rij/Rc/np.sqrt(np.pi) -math.erfc(rij/Rc)*distx/r + c_shift*distx/rij)
-                force[i,1] += k * (-2*np.exp(-(rij/Rc)**2)/rij/Rc/np.sqrt(np.pi) -math.erfc(rij/Rc)*disty/r + c_shift*disty/rij)
-                force[i,2] += k * (-2*np.exp(-(rij/Rc)**2)/rij/Rc/np.sqrt(np.pi) -math.erfc(rij/Rc)*distz/r + c_shift*distz/rij)
+                force[i,0] -= k * (-2*np.exp(-(rij/Rc)**2)/rij/Rc/np.sqrt(np.pi) -math.erfc(rij/Rc)*distx/r + c_shift*distx/rij)
+                force[i,1] -= k * (-2*np.exp(-(rij/Rc)**2)/rij/Rc/np.sqrt(np.pi) -math.erfc(rij/Rc)*disty/r + c_shift*disty/rij)
+                force[i,2] -= k * (-2*np.exp(-(rij/Rc)**2)/rij/Rc/np.sqrt(np.pi) -math.erfc(rij/Rc)*distz/r + c_shift*distz/rij)
 
     """Surface charges at z = Lz """
     surface = 1
@@ -330,9 +330,9 @@ def coulombic_wall(force, pos, pos_discrete, charge, discrete_surface_q, L):
             rij = np.sqrt(r)
 
             if rij < Rc:
-                force[i,0] -= k * (-2*np.exp(-(rij/Rc)**2)/rij/Rc/np.sqrt(np.pi) -math.erfc(rij/Rc)*distx/r + c_shift*distx/rij)
-                force[i,1] -= k * (-2*np.exp(-(rij/Rc)**2)/rij/Rc/np.sqrt(np.pi) -math.erfc(rij/Rc)*disty/r + c_shift*disty/rij)
-                force[i,2] -= k * (-2*np.exp(-(rij/Rc)**2)/rij/Rc/np.sqrt(np.pi) -math.erfc(rij/Rc)*distz/r + c_shift*distz/rij)
+                force[i,0] += k * (-2*np.exp(-(rij/Rc)**2)/rij/Rc/np.sqrt(np.pi) -math.erfc(rij/Rc)*distx/r + c_shift*distx/rij)
+                force[i,1] += k * (-2*np.exp(-(rij/Rc)**2)/rij/Rc/np.sqrt(np.pi) -math.erfc(rij/Rc)*disty/r + c_shift*disty/rij)
+                force[i,2] += k * (-2*np.exp(-(rij/Rc)**2)/rij/Rc/np.sqrt(np.pi) -math.erfc(rij/Rc)*distz/r + c_shift*distz/rij)
 
     return force
 
