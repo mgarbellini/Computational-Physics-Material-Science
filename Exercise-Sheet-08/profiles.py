@@ -53,7 +53,7 @@ if __name__ == '__main__':
 
     settings.init()
 
-    pos = import_array("positions_pos")
+    pos = import_array("positions_neg")
 
     profile = 0
     for i in tqdm(range(pos.shape[1]), desc="Density Profile"):

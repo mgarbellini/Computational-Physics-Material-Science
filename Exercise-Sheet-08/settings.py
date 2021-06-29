@@ -69,7 +69,7 @@ def init():
     global DT, m, iter_equ, iter_prod, rescaling_freq, sampling_freq, ovito_freq
     DT = 1E-15
     m = 50
-    iter_equ = 10000
+    iter_equ = 5000
     iter_prod = 10*iter_equ
     rescaling_freq = 10
     sampling_freq = 10

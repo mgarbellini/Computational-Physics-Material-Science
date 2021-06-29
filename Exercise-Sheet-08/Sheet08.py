@@ -46,8 +46,8 @@ def equilibration_run():
             system.force, system.potential = force.lennard_jones_wall(
                 system.force, system.pos, system.L, system.potential)
 
-            system.force = force.coulombic_wall(
-                system.force, system.pos, system.discrete_surface_q_pos, system.charge, system.discrete_surface_q, system.L)
+            #system.force = force.coulombic_wall(
+            #    system.force, system.pos, system.discrete_surface_q_pos, system.charge, system.discrete_surface_q, system.L)
 
         integrator.nose_hoover_integrate(iter)
 

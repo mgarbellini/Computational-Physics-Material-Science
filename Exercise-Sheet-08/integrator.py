@@ -245,8 +245,8 @@ def nose_hoover_integrate(iter):
 
 
     """Coulombic interaction between surface discrete charges and particles"""
-    system.force = force.coulombic_wall(
-        system.force, system.pos, system.discrete_surface_q_pos, system.charge, system.discrete_surface_q, system.L)
+    #system.force = force.coulombic_wall(
+    #    system.force, system.pos, system.discrete_surface_q_pos, system.charge, system.discrete_surface_q, system.L)
 
 
 
