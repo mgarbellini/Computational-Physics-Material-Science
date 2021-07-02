@@ -6,7 +6,7 @@
 
 Albert-Ludwigs-Universität Freiburg
 Computational Physics: Material Science
-Exercise Sheet 07: Structure Factor
+Exercise Sheet 08: Bond Potential
 
 *Objective*
 
