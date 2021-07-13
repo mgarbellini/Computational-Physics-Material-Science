@@ -5,14 +5,18 @@
 @email:     matteo.garbellini@studenti.unimi.it
 
 * CLASS MODULE *
-Contains the particles and molecules class implementations
+Contains the core classes needed for the Water.py main file:
+- Particle
+- Molecule (inherits the particle class)
+- Force (inherits the molecule class)
+- IntegratorNH (inherits the particle class)
 
-Latest update: July 9th 2021
+Latest update: July 12th 2021
 """
 
 import numpy as np
 from numba import njit
-from numba import int32, float64    # import the types
+from numba import int32, float64
 from numba import types, typed, typeof, deferred_type
 from numba.experimental import jitclass
 
@@ -54,6 +58,9 @@ class Particle:
         kinetic = self.vel[0]**2 + self.vel[1]**2 + self.vel[2]**2
         return kinetic
 
+    def norm(self):
+        return np.linalg.norm(self.pos)
+
 
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -77,15 +84,41 @@ class Water_Molecule:
         self.bond_len = 0
 
     def load_atoms(self, oxygen, hydrogen1, hydrogen2):
+        """Loads the molecule with the input atoms. Atoms must be
+        altready fully defined (no further manipulation needed)"""
         self.hydrogen1 = hydrogen1
         self.hydrogen2 = hydrogen2
         self.oxygen = oxygen
 
+    def distribute_atoms(self, rzero, azero):
+        """Distributes the hydrogen atoms spatially with respect
+        to the central oxygen atom"""
 
-    def molecule_from_seed(self, oxygen, hydrogen1, hydrogen2):
-        self.hydrogen1 = hydrogen1
-        self.hydrogen2 = hydrogen2
-        self.oxygen = oxygen
+        #set same position
+        self.hydrogen1.pos[0] = np.random.uniform(-1.,1.)
+        self.hydrogen1.pos[1] = np.random.uniform(-1.,1.)
+        self.hydrogen1.pos[2] = np.random.uniform(-1.,1.)
+
+        #rotate second hydrogen position with respect to oxygen of azero degrees
+        sign = np.random.choice(np.array([-1,1]))
+        c = np.cos(sign*azero)
+        s = np.sin(sign*azero)
+
+        Rx = np.array(((1,0,0),(0,c,-s),(0,s,c)), dtype = float64)
+        Ry = np.array(((c,0,s),(0,1,0),(-s,0,c)), dtype = float64)
+        Rz = np.array(((c,-s,0),(s,c,0),(0,0,1)), dtype = float64)
+        axis = np.random.choice(np.array((0,1,2)))
+
+
+        if axis == 0: self.hydrogen2.pos = Rx @ self.hydrogen1.pos
+        elif axis == 1: self.hydrogen2.pos = Ry @ self.hydrogen1.pos
+        else: self.hydrogen2.pos = Rz @ self.hydrogen1.pos
+
+        #normalize positions so that the bond lenght is correct
+        self.hydrogen1.pos *= rzero/np.linalg.norm(self.hydrogen1.pos)
+        self.hydrogen2.pos *= rzero/np.linalg.norm(self.hydrogen2.pos)
+
+
 
     def get_bond_len(self):
 
@@ -102,6 +135,30 @@ class Water_Molecule:
         return rij/2
 
 
+    def get_distance_OH(self, id):
+
+        if id == 1: dist = self.hydrogen1.pos - self.oxygen.pos
+        else: dist = self.hydrogen2.pos - self.oxygen.pos
+
+        return dist
+
+
+    def get_angle(self):
+
+        v1 = self.hydrogen1.pos/np.linalg.norm(self.hydrogen1.pos)
+        v2 = self.hydrogen2.pos/np.linalg.norm(self.hydrogen2.pos)
+
+        dot = np.dot(v1, v2)
+
+        if dot > 1.0:
+            dot = 1.0
+        elif dot < -1.0:
+            dot =  -1.0
+        else:
+            dot = dot
+
+        self.angle = np.arccos(dot)
+        return self.angle
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 """" CLASS: FORCES """""""""""""""""""""""""""""""""""""""""
@@ -125,41 +182,92 @@ class Force:
         self.kbond = kbond
         self.kangle = kangle
         self.rnot = rnot
-        self.anot = anot
+        self.anot = np.radians(anot)
         self.sigma = sigma
         self.rcut = rcut
         self.epsilon = epsilon
         self.N = 0
 
+
     def add_molecules(self, molecules):
         self.molecules = molecules
         self.N = len(self.molecules)
 
+
     def initialize_forces(self):
         for i in range(self.N):
-            molecules[i].oxygen.force = np.zeros(3)
-            molecules[i].hydrogen1.force = np.zeros(3)
-            molecules[i].hydrogen2.force = np.zeros(3)
+            self.molecules[i].oxygen.force = np.zeros(3)
+            self.molecules[i].hydrogen1.force = np.zeros(3)
+            self.molecules[i].hydrogen2.force = np.zeros(3)
 
     def intra_molecular(self):
         _bond_force(self.molecules, self.N, self.kbond, self.rnot)
+
+        # Currently not working properly -> uncomment to see the effect on the bond len.
         _angle_force(self.molecules, self.N, self.kangle, self.anot)
 
     def inter_molecular(self):
         _inter_force(self.molecules, self.N, self.sigma, self.rcut, self.epsilon)
 
 
+
 @njit()
 def _bond_force(molecules, n_molecules, kbond, rnot):
     """Computes the bond contribution to the intra-molecular force"""
+
     for i in range(n_molecules):
-        print("compute bond force")
+
+        #force between O and H1
+        r = molecules[i].get_distance_OH(1)
+        dist = np.linalg.norm(r)
+        f = kbond*(dist - rnot)*r/dist
+        molecules[i].oxygen.force -= f
+        molecules[i].hydrogen1.force += f
+
+        #force between O and H2
+        r = molecules[i].get_distance_OH(2)
+        dist = np.linalg.norm(r)
+        f = kbond*(dist - rnot)*r/dist
+        molecules[i].oxygen.force -= f
+        molecules[i].hydrogen2.force += f
 
 @njit()
 def _angle_force(molecules, n_molecules, kangle, anot):
     """Computes the angle contribution to the intra-molecular force"""
+
     for i in range(n_molecules):
-        print("compute angle force")
+
+        # define unit vectors
+        if(np.linalg.norm(molecules[i].hydrogen1.pos) <= 0): print("error")
+        if(np.linalg.norm(molecules[i].hydrogen2.pos) <= 0): print("error")
+
+        # direction of the forces
+        d1 = np.cross(molecules[i].hydrogen1.pos,np.cross(molecules[i].hydrogen1.pos,molecules[i].hydrogen2.pos))
+        d2 = np.cross(-molecules[i].hydrogen2.pos, np.cross(molecules[i].hydrogen1.pos,molecules[i].hydrogen2.pos))
+
+        d1 = d1/np.linalg.norm(d1)
+        d2 = d2/np.linalg.norm(d2)
+
+        # define dtheta/dr
+
+
+        dtheta1 = 1/np.linalg.norm(molecules[i].hydrogen1.pos)
+        dtheta2 = 1/np.linalg.norm(molecules[i].hydrogen2.pos)
+
+        # get angle between vectors
+        angle = molecules[i].get_angle()
+
+        # get forces
+        f1 = - kangle*(angle - anot)*dtheta1*d1
+        f2 = - kangle*(angle - anot)*dtheta2*d2
+
+        molecules[i].hydrogen1.force += f1
+        molecules[i].hydrogen2.force += f2
+        molecules[i].oxygen.force -= f1 + f2
+        #molecules[i].oxygen.force += f*dv1 - f*dv2
+        #molecules[i].oxygen.force += f*dv1/np.linalg.norm(molecules[i].hydrogen1.pos) + f*dv2/np.linalg.norm(molecules[i].hydrogen2.pos)
+
+
 
 @njit()
 def _inter_force(molecules, n_molecules, sigma, rcut, e):
@@ -172,7 +280,6 @@ def _inter_force(molecules, n_molecules, sigma, rcut, e):
             ry = molecules[i].oxygen.pos[1] - molecules[j].oxygen.pos[1]
             rz = molecules[i].oxygen.pos[2] - molecules[j].oxygen.pos[2]
             r = rx*rx + ry*ry + rz*rz
-            print(r)
 
             if(r < rcut*rcut):
                 fx = 48 * e * (sigma**12 * rx / r**7 - 0.5 * sigma**6 * rx / r**4)
@@ -188,6 +295,7 @@ def _inter_force(molecules, n_molecules, sigma, rcut, e):
                 molecules[i].oxygen.force[2] += fz
                 molecules[j].oxygen.force[2] -= fz
 
+            # Coulomb interaction missing
 
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -243,7 +351,6 @@ class IntegratorNH:
         G = (2*kinetic - 3*self.n*KB*self.T)/self.Q
         self.lns += self.xi * self.dt + 0.5 * G * self.dt * self.dt
         self.xi += G*self.dt
-
 
     def full_step(self):
         for i in range(self.n):
