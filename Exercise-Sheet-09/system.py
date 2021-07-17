@@ -27,6 +27,11 @@ N = None
 pos = None
 vel = None
 
+"""Molecular system variables"""
+mask = None # np array of dimension (M, 2), where mask[0,:] = [index[0], index[1]]
+M = None # number of molecules
+r0 = None
+
 """Force variables"""
 force = None
 f_wall_dw = None  # force on lower wall

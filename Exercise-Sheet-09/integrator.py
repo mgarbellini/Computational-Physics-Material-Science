@@ -233,14 +233,10 @@ def nose_hoover_integrate(iter):
     system.xi = system.xi + G_half*settings.DT
 
 
-    system.force, system.potential, system.virial = force.lennard_jones(
-        np.zeros(system.pos.shape, dtype=np.float), system.pos, system.L)
+    system.force = force.lennard_jones_bond(
+        system.mask, np.zeros((system.force.shape), dtype=np.float), system.pos, system.L)
+
+    system.force = force.bond_potential(system.mask, system.pos, system.force)
 
     system.vel = nh_vel2(vel_half, system.force,
                          system.mass, system.xi, settings.DT)
-
-    """Compute Energies"""
-    if iter%settings.sampling_freq == 0:
-        system.kinetic = compute_kinetic(system.vel, system.mass)
-        system.nose_hoover = routines.nose_hoover_energy(system.Q, system.xi, system.N, settings.kb, system.T, system.lns)
-        system.energy = system.kinetic + system.potential + system.nose_hoover

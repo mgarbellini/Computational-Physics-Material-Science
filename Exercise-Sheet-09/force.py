@@ -13,6 +13,7 @@ Latest update: June 1st 2021
 
 import numpy as np
 import system
+
 import matplotlib.pyplot as plt
 from numba import jit, njit, vectorize
 from concurrent.futures import ThreadPoolExecutor
@@ -26,7 +27,8 @@ sigma_wall = None
 cutoff = None
 cutoff_wall = None
 potential_shift = None
-
+kb = 0.00041
+r0 = None
 
 @njit
 def mic(xi, xj, L):
@@ -207,6 +209,104 @@ def external_force(force, k, axis = 2):
 
     return force
 
+
+@njit
+def lennard_jones_bond(mask, force, pos, L):
+    """Computes the force on all particles given a Lennard-Jones potential
+
+    Args:
+        force -- np.zeros([N, 3]) array for force storage (N = number of particles)
+        pos -- np.array([N,3]) array of current positions
+        L -- dimension of enclosing box
+        charge -- np.array(N) containing particles charges
+
+    Parameters:
+        sigma -- parameter from the Lennard-Jones potential
+        epsilon -- parameter from the Lennard-Jones potential
+
+    Returns:
+        force -- np.array([N, 3]) containing the net force on each particle
+        potential -- value of the potential energy of the system
+
+    Note:
+        -- the routine runs using Numba @njit decorator for faster run time
+    """
+
+    for m in range(mask.shape[0]):
+        for i in range(2):
+
+            index = mask[m,i]
+            if i == 0 : bonded = 1
+            else : bonded = 0
+
+            for j in range(pos.shape[0]):
+
+                if(index != j and bonded != j):
+
+                    # X AXIS
+                    distx = pos[index,0] - pos[j,0]
+                    if abs(distx) > 0.5 * L[0]:
+                        distx = distx - np.sign(distx) * L[0]
+
+                    # Y AXIS
+                    disty = pos[index,1] - pos[j,1]
+                    if abs(disty) > 0.5 * L[1]:
+                        disty = disty - np.sign(disty) * L[1]
+
+                    # Z AXIS
+                    distz = pos[index,2] - pos[j,2]
+                    if abs(distz) > 0.5 * L[2]:
+                        distz = distz - np.sign(distz) * L[2]
+
+                    r = distx * distx + disty * disty + distz * distz
+
+
+                    if(np.sqrt(r) < cutoff):
+                        fx = 48 * epsilon * (sigma**12 * distx / r**7 - 0.5 * sigma**6 * distx / r**4)
+                        fy = 48 * epsilon * (sigma**12 * disty / r**7 - 0.5 * sigma**6 * disty / r**4)
+                        fz = 48 * epsilon * (sigma**12 * distz / r**7 - 0.5 * sigma**6 * distz / r**4)
+
+                        force[index, 0] += fx
+                        force[index, 1] += fy
+                        force[index, 2] += fz
+
+                        force[j, 0] -= fx
+                        force[j, 1] -= fy
+                        force[j, 2] -= fz
+
+
+    return force
+
+@njit
+def bond_potential(mask, pos, force):
+    """Computes the bond potential between two atoms of the same molecule"""
+
+    # loop over all molecules
+    for m in range(mask.shape[0]):
+
+        #compute bond forces between particles of given molecule
+        i_index = mask[m,0]
+        j_index = mask[m,1]
+
+        rx = pos[i_index, 0] - pos[j_index, 0]
+        ry = pos[i_index, 1] - pos[j_index, 1]
+        rz = pos[i_index, 2] - pos[j_index, 2]
+
+        r = np.sqrt(rx*rx + ry*ry + rz*rz)
+
+        fx = kb*(r - r0)*rx/r
+        fy = kb*(r - r0)*rx/r
+        fz = kb*(r - r0)*rx/r
+
+        force[i_index, 0] += fx
+        force[i_index, 1] += fy
+        force[i_index, 2] += fz
+
+        force[j_index, 0] -= fx
+        force[j_index, 1] -= fy
+        force[j_index, 2] -= fz
+
+    return force
 
 def LJ_potential_shift():
     """Computes the LJ potential shift

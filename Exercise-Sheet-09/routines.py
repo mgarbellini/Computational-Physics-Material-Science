@@ -406,4 +406,16 @@ def density_profile(axis, nbins = 100):
     return hist[0], hist[1]
 
 
-"""Structure factor"""
+"""Molecular mask"""
+def populate_mask():
+
+    i = 0
+    m = 0
+    while i < system.pos.shape[0]-1:
+        system.mask[m,0] = i
+        system.mask[m,1] = i+1
+
+        i += 2
+        m += 1
+
+    if m == system.M : print("Molecular mask populated successfully!")

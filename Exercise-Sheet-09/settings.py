@@ -41,10 +41,13 @@ def init():
     force.sigma = 2.55E-10
     force.cutoff = 2.5*force.sigma  # in units of sigma
 
+
+
     """SYSTEM VARIABLES"""
     system.n = [8, 8, 8]  # number of particles per dimension
     system.dim = 3  # dimension of the sytem (2 or 3 - dimensional)
     system.N = system.n[0]*system.n[1]*system.n[2]  # Number of particles
+    system.M = 0 # number of molecules
     system.rho = 0.5/force.sigma**3  # Number density
     system.L = routines.get_box_dimensions()
     system.alat = system.L[0]/system.n[0]  # Lattice parameter
@@ -53,27 +56,32 @@ def init():
     system.virial = 0
     # target temperature (variable with cT "current temp also available")
 
+    """Molecular variables"""
+    force.r0 = 1.07E-10
+    system.M = int(system.N/2)
 
     """SIMULATION VARIABLES"""
     global DT, m, iter_equ, iter_prod, rescaling_freq, sampling_freq
     DT = 1E-15
     m = 50
-    iter_equ = 1000
-    iter_prod = 10000
+    iter_equ = 5000
+    iter_prod = 35000
     rescaling_freq = 10
     sampling_freq = 10
 
     """SYSTEM/PARTICLES VARIABLES"""
-    system.mass = 105.52E-27  # the particles are assumed have the same mass
+    system.mass = 2.32E-26  # the particles are assumed have the same mass
     system.pos = np.zeros((system.N, system.dim), dtype=np.float)
     system.vel = np.zeros((system.N, system.dim), dtype=np.float)
     system.force = np.zeros((system.N, system.dim), dtype=np.float)
+    system.mask = np.zeros((system.M,2), dtype = np.int) # in this scenario we're considering diatomic molecules
     system.time = 0  # probably not very useful
     system.xi = 0
     system.lns = 0
 
     """SYSTEM INIT ROUTINES"""
     routines.position_lattice()
+    routines.populate_mask()
     routines.velocity_random('boltzmann')
     system.kinetic = integrator.compute_kinetic(system.vel, system.mass)
     routines.velocity_rescale()
